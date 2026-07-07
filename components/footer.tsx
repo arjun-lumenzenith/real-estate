@@ -19,7 +19,35 @@ const BUILDERS = [
   'Embassy Group',
 ]
 
-export function Footer() {
+// ADD COMPONENT PROP DEFINITIONS FOR YOUR STATE MANAGEMENT HOOKS
+interface FooterProps {
+  locs?: string[];
+  setLocs?: (v: string[]) => void;
+}
+
+export function Footer({ locs = [], setLocs }: FooterProps) {
+  
+  // Custom click logic block
+  const handleLocalityClick = (e: React.MouseEvent, localityName: string) => {
+    // 1. Prevent native hashtag jumping behavior
+    e.preventDefault();
+    
+    if (setLocs) {
+      // 2. Add to active filters array list if it isn't present
+      if (!locs.includes(localityName)) {
+        setLocs([...locs, localityName]);
+      }
+      
+      // 3. Smooth scroll up instantly to the top edge of your matching grid cards
+      setTimeout(() => {
+        document.getElementById('property-grid')?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    } else {
+      // Fallback fallback if state bridges fail
+      document.getElementById('search')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <footer className="bg-card border-t border-border">
       <div className="mx-auto max-w-7xl px-6 lg:px-8 py-16">
@@ -48,14 +76,14 @@ export function Footer() {
                 <Mail className="h-3.5 w-3.5 shrink-0" />
                 info@lumenzenith.com
               </a>
-              <span className="flex items-start gap-2">
+              <span className="flex items-start gap-2 text-xs leading-normal">
                 <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                 235, 2nd & 3rd Floor, 13th Cross Road, Indiranagar 2nd Stage, Hoysala Nagar Bangalore — 560038
               </span>
             </div>
           </div>
 
-          {/* Localities */}
+          {/* Localities (Linked up to active state checks) */}
           <div>
             <p
               className="text-xs tracking-widest uppercase mb-5 text-muted-foreground"
@@ -68,10 +96,16 @@ export function Footer() {
                 <li key={l}>
                   <a
                     href="#search"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={(e) => handleLocalityClick(e, l)}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-between"
                     style={{ fontFamily: 'var(--font-body)' }}
                   >
-                    {l}
+                    <span>{l}</span>
+                    {locs.includes(l) && (
+                      <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono uppercase tracking-wider">
+                        Active
+                      </span>
+                    )}
                   </a>
                 </li>
               ))}
