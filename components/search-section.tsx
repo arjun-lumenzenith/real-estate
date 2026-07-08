@@ -69,13 +69,13 @@ export function SearchSection({ locs, setLocs, buds, setBuds, bhks, setBhks }: a
             <div key={index} className="flex-1 flex items-center gap-2 px-4 py-2 border-b sm:border-b-0 sm:border-r last:border-r-0 border-border">
               {filter.icon}
               <Popover>
-                <PopoverTrigger asChild>
-                <div className="w-full flex items-center justify-between py-1 text-sm font-normal bg-transparent text-foreground cursor-pointer select-none">
+              <PopoverTrigger 
+                  className="w-full flex items-center justify-between py-1 text-sm font-normal bg-transparent text-foreground cursor-pointer select-none border-none outline-none"
+                >
                   <span className="truncate">
                     {filter.state.length === 0 ? filter.label : `${filter.state.length} Selected`}
                   </span>
                   <ChevronDown className="h-3 w-3 opacity-50 ml-2 shrink-0" />
-                </div>
                 </PopoverTrigger>
                 <PopoverContent className="w-64 max-h-72 overflow-y-auto bg-card border-border p-2 shadow-lg" align="start">
                   <div className="flex flex-col gap-1">
