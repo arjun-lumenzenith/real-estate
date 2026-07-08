@@ -12,6 +12,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { CheckCircle2, Lock, Phone, Mail, User, MapPin, Home } from 'lucide-react'
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { ChevronDown } from "lucide-react"
 
 const LOCALITIES = [
   'Whitefield',
@@ -46,14 +53,15 @@ const TRUST_POINTS = [
 
 export function LeadForm() {
   const [submitted, setSubmitted] = useState(false)
+  const [referenceId, setReferenceId] = useState("")
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
     name: '',
     mobile: '',
     email: '',
-    locality: '',
-    budget: '',
-    bhk: '',
+    locality: [] as string[],
+    budget: "",
+    bhk: [] as string[],
   })
   const [errors, setErrors] = useState<Partial<typeof form>>({})
 
@@ -63,6 +71,34 @@ export function LeadForm() {
     if (!/^[6-9]\d{9}$/.test(form.mobile)) e.mobile = 'Enter a valid 10-digit Indian mobile number.'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email address.'
     return e
+  }
+
+  const resetForm = () => {
+    setForm({
+      name: "",
+      mobile: "",
+      email: "",
+      locality: [],
+      budget: "",
+      bhk: [],
+    })
+  
+    setErrors({})
+    setSubmitted(false)
+    setReferenceId("")
+
+    setTimeout(() => {
+      document.getElementById("name")?.focus()
+    }, 0)
+  }
+
+  const toggleLocality = (item: string) => {
+    setForm({
+      ...form,
+      locality: form.locality.includes(item)
+        ? form.locality.filter((i) => i !== item)
+        : [...form.locality, item],
+    })
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -76,6 +112,9 @@ export function LeadForm() {
     // Simulate async submission
     setTimeout(() => {
       setLoading(false)
+      
+      const id = `LZ-${Date.now().toString().slice(-6)}`
+      setReferenceId(id)
       setSubmitted(true)
     }, 1200)
   }
@@ -105,9 +144,25 @@ export function LeadForm() {
             <p className="mt-4 text-sm text-muted-foreground" style={{ fontFamily: 'var(--font-body)' }}>
               Reference ID:{' '}
               <span className="font-mono text-foreground">
-                LZ-{Date.now().toString().slice(-6)}
+                {referenceId}
               </span>
             </p>
+            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+              <Button
+                onClick={resetForm}
+                className="flex-1"
+              >
+                Book Another Visit
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="flex-1"
+              >
+                Continue Browsing
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -281,18 +336,45 @@ export function LeadForm() {
                   </Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none z-10" />
-                    <Select onValueChange={(v) => setForm({ ...form, locality: v })}>
-                      <SelectTrigger className={`${inputClass} pl-9 w-full`}>
-                        <SelectValue placeholder="Locality" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border">
-                        {LOCALITIES.map((l) => (
-                          <SelectItem key={l} value={l} className="text-sm">
-                            {l}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover>
+                    <PopoverTrigger
+                        className="w-full"
+                      >
+                        <div className="flex items-center justify-between w-full h-10 rounded-md border border-input bg-background pl-10 pr-3 text-sm">
+                          <span className="truncate flex-1 text-left pr-2">
+                            {form.locality.length === 0
+                              ? "Select Preferred Locality"
+                              : form.locality.length <= 2
+                                ? form.locality.join(", ")
+                                : `${form.locality[0]}, ${form.locality[1]} +${form.locality.length - 2}`}
+                          </span>
+
+                          <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
+                        </div>
+                      </PopoverTrigger>
+
+                      <PopoverContent
+                        className="w-[320px] max-h-72 overflow-y-auto p-2"
+                        align="start"
+                      >
+                        <div className="flex flex-col gap-1">
+                          {LOCALITIES.map((locality) => (
+                            <label
+                              key={locality}
+                              className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 cursor-pointer text-sm"
+                            >
+                            <Checkbox
+                                checked={form.locality.includes(locality)}
+                                onCheckedChange={() => toggleLocality(locality)}
+                                className="border border-gray-500 data-[state=checked]:border-primary"
+                            />
+
+                              {locality}
+                            </label>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
 
@@ -325,20 +407,29 @@ export function LeadForm() {
                     <button
                       key={t}
                       type="button"
-                      onClick={() => setForm({ ...form, bhk: form.bhk === t ? '' : t })}
+                      onClick={() => {
+                        const exists = form.bhk.includes(t)
+                      
+                        setForm({
+                          ...form,
+                          bhk: exists
+                            ? form.bhk.filter((b) => b !== t)
+                            : [...form.bhk, t],
+                        })
+                      }}
                       className="text-xs px-4 py-2 border transition-colors tracking-wide"
                       style={{
                         fontFamily: 'var(--font-body)',
                         backgroundColor:
-                          form.bhk === t
+                          form.bhk.includes(t)
                             ? 'oklch(0.75 0.12 80 / 0.15)'
                             : 'transparent',
                         borderColor:
-                          form.bhk === t
+                          form.bhk.includes(t)
                             ? 'oklch(0.75 0.12 80)'
                             : 'oklch(0.28 0.03 255)',
                         color:
-                          form.bhk === t
+                          form.bhk.includes(t)
                             ? 'oklch(0.75 0.12 80)'
                             : 'oklch(0.60 0.015 255)',
                       }}
