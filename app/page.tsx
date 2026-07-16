@@ -6,7 +6,6 @@ import { HeroSection } from '@/components/hero-section'
 import { BuildersSection } from '@/components/builders-section'
 import { SearchSection } from '@/components/search-section'
 import { WhyUsSection } from '@/components/why-us-section'
-import { LeadForm } from '@/components/lead-form'
 import { Footer } from '@/components/footer'
 
 export default function Home() {
@@ -29,7 +28,6 @@ export default function Home() {
       />
       
       <WhyUsSection />
-      <LeadForm />
       
       {/* Pass localities tracking states into the footer links */}
       <Footer locs={locs} setLocs={setLocs} />

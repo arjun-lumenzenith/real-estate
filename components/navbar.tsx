@@ -3,14 +3,14 @@
 import { useState } from 'react'
 import { Menu, X, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import LeadDialog from '@/components/lead-dialog'
 
 export function Navbar() {
   const [open, setOpen] = useState(false)
 
   const links = [
-    { label: 'Projects', href: '#projects' },
+    { label: 'Projects', href: '#search' },
     { label: 'Builders', href: '#builders' },
-    { label: 'Localities', href: '#search' },
     { label: 'About', href: '#about' },
   ]
 
@@ -54,13 +54,11 @@ export function Navbar() {
               <Phone className="h-3.5 w-3.5" />
               +91 99008 91647
             </a>
-            <Button
-              size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 tracking-wide text-xs uppercase"
-              asChild
-            >
-              <a href="#lead">Book a Site Visit</a>
-            </Button>
+            <LeadDialog
+              triggerText="Book a Site Visit"
+              triggerVariant="default"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 tracking-wide text-xs uppercase h-9 px-4"
+            />
           </div>
 
           {/* Mobile toggle */}
@@ -87,9 +85,11 @@ export function Navbar() {
               {l.label}
             </a>
           ))}
-          <Button size="sm" className="mt-2 bg-primary text-primary-foreground w-full text-xs uppercase tracking-wide" asChild>
-            <a href="#lead">Book a Site Visit</a>
-          </Button>
+          <LeadDialog
+            triggerText="Book a Site Visit"
+            triggerVariant="default"
+            className="mt-2 w-full text-xs uppercase tracking-wide h-9"
+          />
         </div>
       )}
     </header>

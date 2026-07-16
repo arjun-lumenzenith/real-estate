@@ -1,52 +1,73 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle2 } from 'lucide-react'
 
-const BUILDERS = [
+const FALLBACK_BUILDERS = [
   {
     name: 'Prestige Group',
     tagline: 'India\'s most trusted luxury developer',
-    projects: '60+ projects delivered',
+    totalProjects: 60,
     badge: 'ISO 9001',
     color: '#c9a84c',
   },
   {
     name: 'Brigade Group',
     tagline: 'Redefining urban living in South India',
-    projects: '250+ million sq ft developed',
+    totalProjects: 250,
     badge: 'CRISIL A+',
     color: '#b8860b',
   },
   {
     name: 'Sobha Limited',
     tagline: 'Backward integration quality leader',
-    projects: '100M+ sq ft constructed',
+    totalProjects: 100,
     badge: 'ISO 14001',
-    color: '#d4a843',
-  },
-  {
-    name: 'Godrej Properties',
-    tagline: 'Sustainable premium communities',
-    projects: 'Pan-India developer',
-    badge: 'LEED Gold',
-    color: '#c9a84c',
-  },
-  {
-    name: 'Puravankara',
-    tagline: '48+ years of building excellence',
-    projects: '80M sq ft delivered',
-    badge: 'NSE Listed',
-    color: '#b8860b',
-  },
-  {
-    name: 'Embassy Group',
-    tagline: 'Premium mixed-use developments',
-    projects: '62M sq ft portfolio',
-    badge: 'REIT Backed',
     color: '#d4a843',
   },
 ]
 
 export function BuildersSection() {
+  const [builders, setBuilders] = useState(FALLBACK_BUILDERS)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchBuilders()
+  }, [])
+
+  const fetchBuilders = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/builders')
+      const data = await response.json()
+      
+      if (data.success && data.data && Array.isArray(data.data)) {
+        const mappedBuilders = data.data.slice(0, 6).map((b: any) => ({
+          name: b.name || '',
+          tagline: b.description || 'Premium real estate developer',
+          totalProjects: b.totalProjects || 0,
+          badge: b.isVerified ? 'VERIFIED' : 'TIER-1',
+          color: '#c9a84c',
+        }))
+        // Use mapped builders if available, otherwise fall back to default
+        if (mappedBuilders.length > 0) {
+          setBuilders(mappedBuilders)
+        } else {
+          setBuilders(FALLBACK_BUILDERS)
+        }
+      } else {
+        // If API returns no data, use fallback
+        setBuilders(FALLBACK_BUILDERS)
+      }
+    } catch (error) {
+      console.error('[Builders] API Error:', error)
+      setBuilders(FALLBACK_BUILDERS)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <section id="builders" className="py-24 bg-background">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -76,7 +97,7 @@ export function BuildersSection() {
 
         {/* Builder cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-border/40">
-          {BUILDERS.map((b) => (
+          {builders.map((b) => (
             <div
               key={b.name}
               className="bg-card group hover:bg-secondary/60 transition-colors duration-300 p-8 flex flex-col gap-4"
@@ -123,7 +144,7 @@ export function BuildersSection() {
 
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-auto" style={{ fontFamily: 'var(--font-body)' }}>
                 <CheckCircle2 className="h-3.5 w-3.5 shrink-0" style={{ color: 'oklch(0.75 0.12 80)' }} />
-                {b.projects}
+                {b.totalProjects}+ projects delivered
               </div>
             </div>
           ))}

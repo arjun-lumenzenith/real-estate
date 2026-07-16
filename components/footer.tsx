@@ -1,5 +1,8 @@
+'use client'
+
 import { Separator } from '@/components/ui/separator'
 import { Phone, Mail, MapPin } from 'lucide-react'
+import LeadDialog from '@/components/lead-dialog'
 
 const LOCALITIES = [
   'Whitefield',
@@ -27,7 +30,7 @@ interface FooterProps {
 
 export function Footer({ locs = [], setLocs }: FooterProps) {
   
-  // Custom click logic block
+  // Custom click logic block - now triggers API call through state update
   const handleLocalityClick = (e: React.MouseEvent, localityName: string) => {
     // 1. Prevent native hashtag jumping behavior
     e.preventDefault();
@@ -38,12 +41,12 @@ export function Footer({ locs = [], setLocs }: FooterProps) {
         setLocs([...locs, localityName]);
       }
       
-      // 3. Smooth scroll up instantly to the top edge of your matching grid cards
+      // 3. Smooth scroll up to the property grid - loading will be handled by useEffect in SearchSection
       setTimeout(() => {
         document.getElementById('property-grid')?.scrollIntoView({ behavior: 'smooth' });
-      }, 50);
+      }, 300);
     } else {
-      // Fallback fallback if state bridges fail
+      // Fallback if state bridges fail
       document.getElementById('search')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
@@ -144,23 +147,49 @@ export function Footer({ locs = [], setLocs }: FooterProps) {
               Quick Links
             </p>
             <ul className="flex flex-col gap-2.5">
-              {[
-                { label: 'About Us', href: '#about' },
-                { label: 'All Projects', href: '#search' },
-                { label: 'Book a Site Visit', href: '#lead' },
-                { label: 'Privacy Policy', href: '#' },
-                { label: 'RERA Disclosure', href: '#' },
-              ].map((l) => (
-                <li key={l.label}>
-                  <a
-                    href={l.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    style={{ fontFamily: 'var(--font-body)' }}
-                  >
-                    {l.label}
-                  </a>
-                </li>
-              ))}
+              <li>
+                <a
+                  href="#about"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                >
+                  About Us
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#search"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                >
+                  All Projects
+                </a>
+              </li>
+              <li style={{ fontFamily: 'var(--font-body)' }}>
+                <LeadDialog
+                  triggerText="Book a Site Visit"
+                  triggerVariant="ghost"
+                  className="h-auto p-0 text-sm font-normal text-muted-foreground hover:text-foreground justify-start"
+                />
+              </li>
+              <li>
+                <a
+                  href="/privacy-policy"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                >
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                >
+                  RERA Disclosure
+                </a>
+              </li>
             </ul>
           </div>
         </div>
@@ -179,7 +208,7 @@ export function Footer({ locs = [], setLocs }: FooterProps) {
             className="text-xs text-muted-foreground"
             style={{ fontFamily: 'var(--font-body)' }}
           >
-            MahaRERA &bull; CREDAI Member &bull; NAR India Affiliate
+            ** KRERA Certified
           </p>
         </div>
       </div>

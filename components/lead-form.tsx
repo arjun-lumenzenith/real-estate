@@ -19,6 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { ChevronDown } from "lucide-react"
+import { cn } from '@/lib/utils' 
 
 const LOCALITIES = [
   'Whitefield',
@@ -51,10 +52,15 @@ const TRUST_POINTS = [
   'Expert advisor assigned within 2 hrs',
 ]
 
-export function LeadForm() {
+interface LeadFormProps {
+  isDialog?: boolean
+}
+
+export function LeadForm({ isDialog = false }: LeadFormProps) {
   const [submitted, setSubmitted] = useState(false)
   const [referenceId, setReferenceId] = useState("")
   const [loading, setLoading] = useState(false)
+  const [apiError, setApiError] = useState("")
   const [form, setForm] = useState({
     name: '',
     mobile: '',
@@ -101,22 +107,53 @@ export function LeadForm() {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length > 0) {
       setErrors(errs)
       return
     }
+    
     setLoading(true)
-    // Simulate async submission
-    setTimeout(() => {
-      setLoading(false)
+    setApiError("")
+    
+    try {
+      // Format phone number with +91 prefix if not already there
+      let phoneNumber = form.mobile.trim()
+      if (!phoneNumber.startsWith('+91')) {
+        phoneNumber = '+91' + phoneNumber.replace(/^0+/, '')
+      }
       
-      const id = `LZ-${Date.now().toString().slice(-6)}`
-      setReferenceId(id)
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: form.name,
+          phoneNumber: phoneNumber,
+          email: form.email,
+          locality: form.locality.length > 0 ? form.locality : undefined,
+          budgetRange: form.budget,
+          bhkRequirement: form.bhk.length > 0 ? form.bhk : undefined,
+        }),
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        setApiError(data.error || 'Failed to submit form. Please try again.')
+        setLoading(false)
+        return
+      }
+      
+      setReferenceId(data.data.referenceId)
       setSubmitted(true)
-    }, 1200)
+      setLoading(false)
+    } catch (error) {
+      console.error('[Lead Form] API Error:', error)
+      setApiError('Network error. Please check your connection and try again.')
+      setLoading(false)
+    }
   }
 
   const inputClass =
@@ -147,22 +184,9 @@ export function LeadForm() {
                 {referenceId}
               </span>
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-              <Button
-                onClick={resetForm}
-                className="flex-1"
-              >
-                Book Another Visit
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="flex-1"
-              >
-                Continue Browsing
-              </Button>
-            </div>
+            <Button onClick={resetForm} className="mt-8">
+              Book Another Visit
+            </Button>
           </div>
         </div>
       </section>
@@ -170,11 +194,11 @@ export function LeadForm() {
   }
 
   return (
-    <section id="lead" className="py-24 bg-background">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+    <section id="lead" className={isDialog ? "bg-background p-6 md:p-8" : "py-12 md:py-24 bg-background"}>
+      <div className={isDialog ? "" : "mx-auto max-w-7xl px-6 lg:px-8"}>
+        <div className={isDialog ? "w-full" : "grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start"}>
           {/* Left — copy */}
-          <div>
+          <div className={isDialog ? "hidden" : "hidden lg:block"}>
             <p
               className="text-xs tracking-widest uppercase mb-4"
               style={{ fontFamily: 'var(--font-body)', color: 'oklch(0.75 0.12 80)' }}
@@ -230,7 +254,7 @@ export function LeadForm() {
           </div>
 
           {/* Right — form */}
-          <div className="bg-card border border-border p-8">
+          <div className={isDialog ? "" : "bg-card border border-border p-6 md:p-8 lg:col-span-1 col-span-1"}>
             <h3
               className="text-2xl font-light mb-8"
               style={{ fontFamily: 'var(--font-display)' }}
@@ -239,6 +263,11 @@ export function LeadForm() {
             </h3>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+              {apiError && (
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded text-sm text-destructive">
+                  {apiError}
+                </div>
+              )}
               {/* Name */}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="name" className="text-xs tracking-wide uppercase text-muted-foreground" style={{ fontFamily: 'var(--font-body)' }}>
@@ -338,9 +367,14 @@ export function LeadForm() {
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none z-10" />
                     <Popover>
                     <PopoverTrigger
-                        className="w-full"
+                        className={cn(
+                          inputClass,
+                          "w-full flex items-center justify-between pl-10 pr-3 text-sm select-none"
+                        )}
+                        style={{ 
+                          height: "38px"
+                        }}
                       >
-                        <div className="flex items-center justify-between w-full h-10 rounded-md border border-input bg-background pl-10 pr-3 text-sm">
                           <span className="truncate flex-1 text-left pr-2">
                             {form.locality.length === 0
                               ? "Select Preferred Locality"
@@ -350,12 +384,11 @@ export function LeadForm() {
                           </span>
 
                           <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
-                        </div>
                       </PopoverTrigger>
 
                       <PopoverContent
-                        className="w-[320px] max-h-72 overflow-y-auto p-2"
-                        align="start"
+                        className="w-[var(--radix-popover-trigger-width)] min-w-[300px] max-h-72 overflow-y-auto p-2 bg-card border-border"
+                          align="start"
                       >
                         <div className="flex flex-col gap-1">
                           {LOCALITIES.map((locality) => (
@@ -383,7 +416,7 @@ export function LeadForm() {
                     Budget Range
                   </Label>
                   <Select onValueChange={(v) => setForm({ ...form, budget: v })}>
-                    <SelectTrigger className={`${inputClass} w-full`}>
+                    <SelectTrigger className={`${inputClass} w-full`} style={{ height: "38px" }}>
                       <SelectValue placeholder="Budget" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border">

@@ -1,6 +1,10 @@
+'use client'
+
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { ArrowRight, ShieldCheck } from 'lucide-react'
+import LeadDialog from '@/components/lead-dialog'
 
 const STATS = [
   { value: '500+', label: 'Projects Sold' },
@@ -63,49 +67,23 @@ export function HeroSection() {
           </p>
 
           <div className="flex flex-wrap gap-4">
-            <Button
-              size="lg"
-              className="rounded-none px-8 text-sm tracking-widest uppercase font-medium"
+            <a
+              href="#search"
+              className={cn(
+                buttonVariants({ size: 'lg' }),
+                'rounded-none px-8 text-sm tracking-widest uppercase font-medium'
+              )}
               style={{ backgroundColor: 'oklch(0.75 0.12 80)', color: 'oklch(0.13 0.025 255)' }}
-              asChild
             >
-              <a href="#search">
-                Explore Properties
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="rounded-none px-8 text-sm tracking-widest uppercase font-medium border-foreground/30 text-foreground hover:bg-foreground/10"
-              asChild
-            >
-              <a href="#lead">Get Expert Advice</a>
-            </Button>
+              Explore Properties
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </a>
+            <LeadDialog
+              triggerText="Get Expert Advice"
+              triggerVariant="outline"
+              className="rounded-none px-8 border-foreground/30 text-foreground hover:bg-foreground/10"
+            />
           </div>
-        </div>
-
-        {/* Stats bar */}
-        <div className="mt-20 grid grid-cols-2 sm:grid-cols-4 gap-px bg-border/40">
-          {STATS.map((stat) => (
-            <div
-              key={stat.label}
-              className="bg-card/60 backdrop-blur-sm px-6 py-5 flex flex-col gap-1"
-            >
-              <span
-                className="text-3xl font-light"
-                style={{ fontFamily: 'var(--font-display)', color: 'oklch(0.75 0.12 80)' }}
-              >
-                {stat.value}
-              </span>
-              <span
-                className="text-xs tracking-widest uppercase text-muted-foreground"
-                style={{ fontFamily: 'var(--font-body)' }}
-              >
-                {stat.label}
-              </span>
-            </div>
-          ))}
         </div>
       </div>
     </section>

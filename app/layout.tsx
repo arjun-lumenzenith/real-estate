@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   description:
     'LumenZenith is Bangalore\'s trusted channel partner for premium residential projects by India\'s top builders. Explore luxury 2, 3 & 4 BHK homes in prime localities.',
   generator: 'v0.app',
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  }
 }
 
 export const viewport: Viewport = {
