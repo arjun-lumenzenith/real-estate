@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Search, MapPin, IndianRupee, Home, SlidersHorizontal, ChevronDown, X } from 'lucide-react'
 import Image from 'next/image'
+import { Pagination } from '@/components/pagination'
 
 const LOCALITIES = ['Whitefield', 'Sarjapur Road', 'Electronic City', 'Hebbal', 'Kanakapura Road', 'Bannerghatta Road', 'Koramangala', 'Indiranagar', 'Yelahanka', 'Devanahalli', 'North Bangalore']
 const BUDGETS = ['Under ₹50 Lakhs', '₹50 L — ₹1 Cr', '₹1 Cr — ₹1.5 Cr', '₹1.5 Cr — ₹2 Cr', '₹2 Cr — ₹3 Cr', '₹3 Cr — ₹5 Cr', 'Above ₹5 Cr']
@@ -38,6 +39,13 @@ const parseBudgetToNumber = (budgetText: string): string => {
 export function SearchSection({ locs, setLocs, buds, setBuds, bhks, setBhks }: any) {
   const [apiProperties, setApiProperties] = useState(FEATURED)
   const [loadingProperties, setLoadingProperties] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [paginationData, setPaginationData] = useState({ 
+    total: FEATURED.length, 
+    totalPages: Math.ceil(FEATURED.length / 10), 
+    page: 1, 
+    limit: 10 
+  })
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const isInitialMount = useRef(true)
 
@@ -46,9 +54,12 @@ export function SearchSection({ locs, setLocs, buds, setBuds, bhks, setBhks }: a
     if (isInitialMount.current) {
       isInitialMount.current = false
       // Call immediately on first mount
-      fetchProperties()
+      fetchProperties(1)
       return
     }
+
+    // Reset to page 1 when filters change
+    setCurrentPage(1)
 
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)
@@ -56,7 +67,7 @@ export function SearchSection({ locs, setLocs, buds, setBuds, bhks, setBhks }: a
 
     // Debounce subsequent filter changes
     debounceTimerRef.current = setTimeout(() => {
-      fetchProperties()
+      fetchProperties(1)
     }, 2000)
 
     return () => {
@@ -66,13 +77,13 @@ export function SearchSection({ locs, setLocs, buds, setBuds, bhks, setBhks }: a
     }
   }, [locs, buds, bhks])
 
-  const fetchProperties = async () => {
+  const fetchProperties = async (page: number = 1) => {
     try {
       setLoadingProperties(true)
       
       const params = new URLSearchParams({
-        page: '1',
-        limit: '20',
+        page: page.toString(),
+        limit: '10',
       })
       // 1. Join all localities with a comma
       if (locs && locs.length > 0) {
@@ -114,12 +125,18 @@ export function SearchSection({ locs, setLocs, buds, setBuds, bhks, setBhks }: a
       const data = await response.json()
       if (data.success && data.data) {
         setApiProperties(data.data)
+        if (data.pagination) {
+          setPaginationData(data.pagination)
+          setCurrentPage(page)
+        }
       } else {
         setApiProperties(FEATURED)
+        setPaginationData({ total: FEATURED.length, totalPages: 1, page: 1, limit: 10 })
       }
     } catch (error) {
       console.error('[Search] API Error:', error)
       setApiProperties(FEATURED)
+      setPaginationData({ total: FEATURED.length, totalPages: 1, page: 1, limit: 10 })
     } finally {
       setLoadingProperties(false)
     }
@@ -231,6 +248,16 @@ export function SearchSection({ locs, setLocs, buds, setBuds, bhks, setBhks }: a
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={paginationData.totalPages}
+          totalItems={paginationData.total}
+          itemsPerPage={paginationData.limit}
+          onPageChange={(page) => fetchProperties(page)}
+          isLoading={loadingProperties}
+        />
       </div>
     </section>
   )

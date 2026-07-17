@@ -81,6 +81,10 @@ const FALLBACK_BUILDERS = [
 export async function GET(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for') || 'unknown'
+    const searchParams = req.nextUrl.searchParams
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '10', 10)))
+    const offset = (page - 1) * limit
 
     // Try to use database if available
     try {
@@ -105,42 +109,94 @@ export async function GET(req: NextRequest) {
         )
       }
 
-      // Check cache
-      const cacheKey = cacheKeys.builders('')
+      const cacheKey = cacheKeys.properties(
+        String(page),
+        String(limit)
+      );
+
+      // Try cache first
       const cached = await cache.get(cacheKey)
       if (cached) {
         return NextResponse.json({
           success: true,
-          data: cached,
+          data: cached.data,
+          pagination: cached.pagination,
           fromCache: true,
         })
       }
+      
+      // Get total count
+      const countResult = await getDb()
+        .select({ count: builder.id })
+        .from(builder)
 
+      const total = countResult.length
+      const totalPages = Math.ceil(total / limit)
+
+      // Get paginated results
       const result = await getDb()
         .select()
         .from(builder)
         .orderBy(desc(builder.totalProjects))
-        .limit(100)
+        .limit(limit)
+        .offset(offset)
+
+      if (result.length === 0 && page > 1) {
+        return NextResponse.json({
+          success: true,
+          fromCache: false,
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext: false,
+            hasPrev: page > 1,
+          },
+        })
+      }
 
       if (result.length === 0) {
         throw new Error("No builders found in database");
       }
 
-      // Cache for 24 hours
-      await cache.set(cacheKey, result, { ttl: 86400 })
+      const response = {
+        success: true,
+        fromCache: false,
+        data: result,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        }
+      }
+
+      // Cache for 1 hour
+      await cache.set(cacheKey, response, { ttl: 3600 })
+
+      return NextResponse.json(response)
+    } catch (dbError) {
+      console.warn('[GET /api/builders] Database not available, using fallback:', dbError)
+      const total = FALLBACK_BUILDERS.length
+      const totalPages = Math.ceil(total / limit)
+      const paginatedData = FALLBACK_BUILDERS.slice(offset, offset + limit)
 
       return NextResponse.json({
         success: true,
-        data: result,
         fromCache: false,
-      })
-    } catch (dbError) {
-      console.warn('[GET /api/builders] Database not available, using fallback:', dbError)
-      // Fallback to sample data if database is not configured
-      return NextResponse.json({
-        success: true,
-        data: FALLBACK_BUILDERS,
-        fromCache: false,
+        data: paginatedData,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
         fallback: true,
       })
     }

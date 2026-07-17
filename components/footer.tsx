@@ -3,8 +3,9 @@
 import { Separator } from '@/components/ui/separator'
 import { Phone, Mail, MapPin } from 'lucide-react'
 import LeadDialog from '@/components/lead-dialog'
+import { useEffect, useState, useRef } from 'react'
 
-const LOCALITIES = [
+const FALLBACK_LOCALITIES = [
   'Whitefield',
   'Sarjapur Road',
   'Electronic City',
@@ -13,7 +14,7 @@ const LOCALITIES = [
   'Devanahalli',
 ]
 
-const BUILDERS = [
+const FALLBACK_BUILDERS = [
   'Prestige Group',
   'Brigade Group',
   'Sobha Limited',
@@ -29,6 +30,58 @@ interface FooterProps {
 }
 
 export function Footer({ locs = [], setLocs }: FooterProps) {
+  const [builders, setBuilders] = useState<Array<{ name: string }>>([])
+  const [localities, setLocalities] = useState<string[]>([])
+  const [totalBuilders, setTotalBuilders] = useState(0)
+  const [totalLocalities, setTotalLocalities] = useState(0)
+  const isInitialMount = useRef(true)
+
+  useEffect(() => {
+    if (!isInitialMount.current) return
+    isInitialMount.current = false
+
+    const fetchData = async () => {
+      try {
+        // Fetch top 6 tier1 builders (single API call, use pagination metadata for total)
+        const buildersRes = await fetch('/api/builders?page=1&limit=6')
+        const buildersData = await buildersRes.json()
+        if (buildersData.success && Array.isArray(buildersData.data)) {
+          setBuilders(buildersData.data)
+          // Use pagination metadata to get total count instead of making another call
+          if (buildersData.pagination) {
+            setTotalBuilders(buildersData.pagination.total)
+          }
+        } else {
+          setBuilders(FALLBACK_BUILDERS.map(name => ({ name })))
+          setTotalBuilders(FALLBACK_BUILDERS.length)
+        }
+      } catch (error) {
+        console.error('[Footer] Error fetching builders:', error)
+        setBuilders(FALLBACK_BUILDERS.map(name => ({ name })))
+        setTotalBuilders(FALLBACK_BUILDERS.length)
+      }
+
+      try {
+        // Fetch unique localities from properties table
+        const propsRes = await fetch('/api/properties?limit=10')
+        const propsData = await propsRes.json()
+        if (propsData.success && Array.isArray(propsData.data)) {
+          const uniqueLocs = Array.from(new Set(propsData.data.map((p: any) => p.locality))).filter(Boolean)
+          setLocalities(uniqueLocs.slice(0, 6) as string[])
+          setTotalLocalities(uniqueLocs.length)
+        } else {
+          setLocalities(FALLBACK_LOCALITIES)
+          setTotalLocalities(FALLBACK_LOCALITIES.length)
+        }
+      } catch (error) {
+        console.error('[Footer] Error fetching localities:', error)
+        setLocalities(FALLBACK_LOCALITIES)
+        setTotalLocalities(FALLBACK_LOCALITIES.length)
+      }
+    }
+
+    fetchData()
+  }, [])
   
   // Custom click logic block - now triggers API call through state update
   const handleLocalityClick = (e: React.MouseEvent, localityName: string) => {
@@ -68,7 +121,7 @@ export function Footer({ locs = [], setLocs }: FooterProps) {
               style={{ fontFamily: 'var(--font-body)' }}
             >
               Bangalore&apos;s trusted RERA-registered channel partner for premium residential
-              real estate. Serving buyers and investors since 2016.
+              real estate. Serving buyers and investors since 2026.
             </p>
             <div className="flex flex-col gap-3 text-sm text-muted-foreground" style={{ fontFamily: 'var(--font-body)' }}>
               <a href="tel:+919900891647" className="flex items-center gap-2 hover:text-foreground transition-colors">
@@ -88,14 +141,19 @@ export function Footer({ locs = [], setLocs }: FooterProps) {
 
           {/* Localities (Linked up to active state checks) */}
           <div>
-            <p
-              className="text-xs tracking-widest uppercase mb-5 text-muted-foreground"
-              style={{ fontFamily: 'var(--font-body)' }}
-            >
-              Localities
-            </p>
+            <div className="flex items-center justify-between mb-5">
+              <p
+                className="text-xs tracking-widest uppercase text-muted-foreground"
+                style={{ fontFamily: 'var(--font-body)' }}
+              >
+                Localities
+              </p>
+              {totalLocalities > 6 && (
+                <span className="text-[10px] text-muted-foreground">+{totalLocalities - 6} more</span>
+              )}
+            </div>
             <ul className="flex flex-col gap-2.5">
-              {LOCALITIES.map((l) => (
+              {localities.map((l) => (
                 <li key={l}>
                   <a
                     href="#search"
@@ -113,29 +171,52 @@ export function Footer({ locs = [], setLocs }: FooterProps) {
                 </li>
               ))}
             </ul>
+            {totalLocalities > 6 && (
+              <a
+                href="#search"
+                className="text-xs text-primary hover:text-primary/80 transition-colors mt-3 inline-block"
+                style={{ fontFamily: 'var(--font-body)' }}
+              >
+                View All Localities →
+              </a>
+            )}
           </div>
 
           {/* Builders */}
           <div>
-            <p
-              className="text-xs tracking-widest uppercase mb-5 text-muted-foreground"
-              style={{ fontFamily: 'var(--font-body)' }}
-            >
-              Our Builders
-            </p>
+            <div className="flex items-center justify-between mb-5">
+              <p
+                className="text-xs tracking-widest uppercase text-muted-foreground"
+                style={{ fontFamily: 'var(--font-body)' }}
+              >
+                Our Builders
+              </p>
+              {totalBuilders > 6 && (
+                <span className="text-[10px] text-muted-foreground">+{totalBuilders - 6} more</span>
+              )}
+            </div>
             <ul className="flex flex-col gap-2.5">
-              {BUILDERS.map((b) => (
-                <li key={b}>
+              {builders.map((b) => (
+                <li key={b.name}>
                   <a
                     href="#builders"
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     style={{ fontFamily: 'var(--font-body)' }}
                   >
-                    {b}
+                    {b.name}
                   </a>
                 </li>
               ))}
             </ul>
+            {totalBuilders > 6 && (
+              <a
+                href="#builders"
+                className="text-xs text-primary hover:text-primary/80 transition-colors mt-3 inline-block"
+                style={{ fontFamily: 'var(--font-body)' }}
+              >
+                View All Builders →
+              </a>
+            )}
           </div>
 
           {/* Quick links */}

@@ -55,8 +55,30 @@ export const cache = {
 export const cacheKeys = {
   leads: (userId: string) => `leads:${userId}`,
   lead: (id: string) => `lead:${id}`,
-  properties: (locality?: string, budget?: string) =>
-    `properties:${locality || 'all'}:${budget || 'all'}`,
+  properties: (
+    localities?: string,
+    bhkTypes?: string,
+    minBudget?: string,
+    maxBudget?: string,
+    builderId?: string,
+    page?: string,
+    limit?: string
+  ) =>
+    `properties:${
+      localities || "all"
+    }:${
+      bhkTypes || "all"
+    }:${
+      minBudget || "all"
+    }:${
+      maxBudget || "all"
+    }:${
+      builderId || "all"
+    }:${
+      page || "1"
+    }:${
+      limit || "20"
+    }`,
   property: (id: string) => `property:${id}`,
   builders: (tier?: string) => `builders:${tier || 'all'}`,
   builder: (id: string) => `builder:${id}`,

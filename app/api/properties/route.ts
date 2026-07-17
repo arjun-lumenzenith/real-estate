@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
           ? Number(searchParams.get('builderId'))
           : undefined,
         page: parseInt(searchParams.get("page") || "1"),
-        limit: Math.min(parseInt(searchParams.get("limit") || "20"), 100),
+        limit: Math.min(parseInt(searchParams.get("limit") || "20"), 10),
       }
 
       const validated = searchPropertiesSchema.parse(input)
@@ -120,14 +120,15 @@ export async function GET(req: NextRequest) {
         String(validated.builderId ?? ""),
         String(validated.page),
         String(validated.limit)
-    );
+      );
 
       // Try cache first
       const cached = await cache.get(cacheKey)
       if (cached) {
         return NextResponse.json({
           success: true,
-          data: cached,
+          data: cached.data,
+          pagination: cached.pagination,
           fromCache: true,
         })
       }
@@ -138,10 +139,10 @@ export async function GET(req: NextRequest) {
       // Assuming 'bhkTypes' is your parsed string array: ['2', '3']
       if (bhkTypes && bhkTypes.length > 0) {
         // Create an array of individual 'like' conditions for each selected BHK option
-        const bhkConditions = bhkTypes.map((bhk: string) => 
+        const bhkConditions = bhkTypes.map((bhk: string) =>
           like(property.bhkOptions, `%${bhk}%`)
         )
-        
+
         // Wrap them inside an 'or()' statement so it matches ANY of the selected BHK types
         filters.push(or(...bhkConditions))
       }
@@ -153,19 +154,19 @@ export async function GET(req: NextRequest) {
       if (localities && localities.length > 0) {
         // If your column matches exactly, use 'inArray'. 
         // If it's partial text, generate an 'or' block of 'like' clauses:
-        const localityConditions = localities.map((loc: string) => 
+        const localityConditions = localities.map((loc: string) =>
           like(property.locality, `%${loc}%`)
         )
-        
+
         filters.push(or(...localityConditions))
       }
 
       if (validated.minBudget) {
-        filters.push(gte(property.minPrice, validated.minBudget))
+        filters.push(lte(property.minPrice, validated.maxBudget))
       }
 
       if (validated.maxBudget) {
-        filters.push(lte(property.maxPrice, validated.maxBudget))
+        filters.push(gte(property.maxPrice, validated.minBudget))
       }
 
       if (validated.builderId !== undefined) {
@@ -182,7 +183,6 @@ export async function GET(req: NextRequest) {
         .limit(validated.limit)
         .offset(offset)
 
-        console.log("RESULT SET :" + result);
       // Get total count for pagination
       const countResult = await getDb()
         .select({
@@ -195,26 +195,32 @@ export async function GET(req: NextRequest) {
         throw new Error("Testing database fallback");
       }
 
-      // Cache for 1 hour
-      await cache.set(cacheKey, result, { ttl: 3600 })
-      return NextResponse.json({
+      const totalPages = Math.ceil(countResult[0].total / validated.limit)
+      const response = {
         success: true,
         data: result,
         pagination: {
           page: validated.page,
           limit: validated.limit,
           total: countResult[0].total,
-          pages: Math.ceil(countResult.length / validated.limit),
+          totalPages,
+          hasNext: validated.page < totalPages,
+          hasPrev: validated.page > 1,
         },
         fromCache: false,
-      })
+      }
+
+      // Cache for 1 hour
+      await cache.set(cacheKey, response, { ttl: 3600 })
+
+      return NextResponse.json(response)
     } catch (dbError) {
       console.warn('[GET /api/properties] Database not available, using fallback:', dbError)
-      
+
       // Fallback to sample data if database is not configured
       const searchParams = req.nextUrl.searchParams
       let properties = FALLBACK_PROPERTIES
-      
+
       // Apply simple filtering on fallback data
       const locality = searchParams.get('locality')
       const localities = locality ? locality.split(',') : []
@@ -222,12 +228,13 @@ export async function GET(req: NextRequest) {
       if (localities.length > 0) {
         properties = properties.filter((p) => {
           // Return true if the property's locality matches ANY of the selected localities
-          return localities.some((loc) => 
+          return localities.some((loc) =>
             p.locality?.toLowerCase().includes(loc.toLowerCase())
           )
         })
       }
-      
+
+      const totalPages = Math.ceil(properties.length / 20)
       return NextResponse.json({
         success: true,
         data: properties,
@@ -235,7 +242,9 @@ export async function GET(req: NextRequest) {
           page: 1,
           limit: 20,
           total: properties.length,
-          pages: 1,
+          totalPages,
+          hasNext: false,
+          hasPrev: false,
         },
         fromCache: false,
         fallback: true,

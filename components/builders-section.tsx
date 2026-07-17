@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { CheckCircle2, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 
 const FALLBACK_BUILDERS = [
   {
@@ -31,19 +33,22 @@ const FALLBACK_BUILDERS = [
 export function BuildersSection() {
   const [builders, setBuilders] = useState(FALLBACK_BUILDERS)
   const [loading, setLoading] = useState(true)
+  const isInitialMount = useRef(true)
 
   useEffect(() => {
+    if (!isInitialMount.current) return
+    isInitialMount.current = false
     fetchBuilders()
   }, [])
 
   const fetchBuilders = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/builders')
+      const response = await fetch('/api/builders?page=1&limit=6')
       const data = await response.json()
       
       if (data.success && data.data && Array.isArray(data.data)) {
-        const mappedBuilders = data.data.slice(0, 6).map((b: any) => ({
+        const mappedBuilders = data.data.map((b: any) => ({
           name: b.name || '',
           tagline: b.description || 'Premium real estate developer',
           totalProjects: b.totalProjects || 0,
@@ -72,27 +77,35 @@ export function BuildersSection() {
     <section id="builders" className="py-24 bg-background">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Heading */}
-        <div className="mb-16 max-w-2xl">
-          <p
-            className="text-xs tracking-widest uppercase mb-4"
-            style={{ fontFamily: 'var(--font-body)', color: 'oklch(0.75 0.12 80)' }}
-          >
-            Our Builder Partners
-          </p>
-          <h2
-            className="text-4xl sm:text-5xl font-light leading-tight text-balance"
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            Only the Best Builders,{' '}
-            <span style={{ color: 'oklch(0.75 0.12 80)' }}>Curated for You</span>
-          </h2>
-          <p
-            className="mt-4 text-muted-foreground leading-relaxed"
-            style={{ fontFamily: 'var(--font-body)' }}
-          >
-            We partner exclusively with RERA-compliant Tier-1 developers with proven delivery records
-            across Bangalore.
-          </p>
+        <div className="mb-16 max-w-2xl flex items-start justify-between">
+          <div className="flex-1">
+            <p
+              className="text-xs tracking-widest uppercase mb-4"
+              style={{ fontFamily: 'var(--font-body)', color: 'oklch(0.75 0.12 80)' }}
+            >
+              Our Builder Partners
+            </p>
+            <h2
+              className="text-4xl sm:text-5xl font-light leading-tight text-balance"
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              Only the Best Builders,{' '}
+              <span style={{ color: 'oklch(0.75 0.12 80)' }}>Curated for You</span>
+            </h2>
+            <p
+              className="mt-4 text-muted-foreground leading-relaxed"
+              style={{ fontFamily: 'var(--font-body)' }}
+            >
+              We partner exclusively with RERA-compliant Tier-1 developers with proven delivery records
+              across Bangalore.
+            </p>
+          </div>
+          <Link href="/builders">
+            <Button variant="outline" className="ml-4 shrink-0 gap-2">
+              View All
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
         </div>
 
         {/* Builder cards */}
