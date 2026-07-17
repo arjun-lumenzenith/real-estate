@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
         )
       }
 
-      const cacheKey = cacheKeys.properties(
+      const cacheKey = cacheKeys.builders(
         String(page),
         String(limit)
       );

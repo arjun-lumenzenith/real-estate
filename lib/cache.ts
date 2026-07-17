@@ -77,10 +77,14 @@ export const cacheKeys = {
     }:${
       page || "1"
     }:${
-      limit || "20"
+      limit || "10"
     }`,
-  property: (id: string) => `property:${id}`,
-  builders: (tier?: string) => `builders:${tier || 'all'}`,
+  property: (id: string, ) => `property:${id}`,
+  builders: (tier?: string, page?: string, limit?: string) => `builders:${tier || 'all'}:${
+      page || "1"
+    }:${
+      limit || "10"
+    }`,
   builder: (id: string) => `builder:${id}`,
   inquiries: (leadId: string) => `inquiries:${leadId}`,
 }
