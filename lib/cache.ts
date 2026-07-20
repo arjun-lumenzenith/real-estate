@@ -64,26 +64,17 @@ export const cacheKeys = {
     page?: string,
     limit?: string
   ) =>
-    `properties:${
-      localities || "all"
-    }:${
-      bhkTypes || "all"
-    }:${
-      minBudget || "all"
-    }:${
-      maxBudget || "all"
-    }:${
-      builderId || "all"
-    }:${
-      page || "1"
-    }:${
-      limit || "10"
+    `properties:${localities || "all"
+    }:${bhkTypes || "all"
+    }:${minBudget || "all"
+    }:${maxBudget || "all"
+    }:${builderId || "all"
+    }:${page || "1"
+    }:${limit || "10"
     }`,
-  property: (id: string, ) => `property:${id}`,
-  builders: (tier?: string, page?: string, limit?: string) => `builders:${tier || 'all'}:${
-      page || "1"
-    }:${
-      limit || "10"
+  property: (id: string) => `property:${id}`,
+  builders: (tier?: string, page?: string, limit?: string) => `builders:${tier || 'all'}:${page || "1"
+    }:${limit || "10"
     }`,
   builder: (id: string) => `builder:${id}`,
   inquiries: (leadId: string) => `inquiries:${leadId}`,

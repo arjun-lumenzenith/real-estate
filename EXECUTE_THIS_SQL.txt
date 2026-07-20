@@ -1,0 +1,41 @@
+╔════════════════════════════════════════════════════════════════════════╗
+║                   RUN THIS IN YOUR DATABASE EDITOR                    ║
+║                         (Neon SQL Editor)                             ║
+╚════════════════════════════════════════════════════════════════════════╝
+
+STEP 1: Copy the entire SQL from this file:
+→ scripts/migration.sql
+
+STEP 2: Open your database editor in Neon (where you see your tables)
+
+STEP 3: Paste the SQL and RUN IT
+
+This will:
+✓ Create 4 ENUM types (builder_tier, property_status, lead_status, inquiry_type)
+✓ Add ~11 columns to builders table
+✓ Add ~17 columns to properties table
+✓ Add ~13 columns to leads table
+✓ Add ~7 columns to inquiries table (if exists)
+✓ Add ~6 columns to audit_logs table (if exists)
+✓ Create all necessary indexes
+✓ Add foreign key constraints
+✓ Show you the results
+
+STEP 4: After SQL runs, verify you see:
+✓ builders table with: id, name, email, phoneNumber, website, tier, isVerified, totalProjects, established, description, createdAt, updatedAt
+✓ properties table with: id, builderId, title, description, locality, city, address, minPrice, maxPrice, bhkOptions, amenities, totalUnits, soldUnits, reraNumber, imageUrl, status, createdAt, updatedAt
+✓ leads table with: id, userId, fullName, email, phoneNumber, locality, budgetRange, bhkRequirement, source, status, referenceId, notes, createdAt, updatedAt
+
+STEP 5: After SQL completes, run:
+pnpm seed
+
+This will populate 6 builders + 3 properties with all the data
+
+═════════════════════════════════════════════════════════════════════════
+
+FILE: scripts/migration.sql
+LENGTH: 256 lines
+ACTION: Copy ALL and paste into database editor
+STATUS: Ready to execute
+
+═════════════════════════════════════════════════════════════════════════
