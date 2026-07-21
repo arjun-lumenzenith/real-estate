@@ -129,8 +129,6 @@ export async function POST(req: NextRequest) {
         )
       }
 
-      const body = await req.json()
-
       // Validate input
       const validated = createLeadSchema.parse(leadData)
 
