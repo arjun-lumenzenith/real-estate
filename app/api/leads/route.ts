@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Generate reference ID for tracking
-      const referenceId = `LEAD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      const referenceId = `REQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
       // Create lead - using a system user ID for public submissions
       const result = await withDbRetry(
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
           await resend.emails.send({
             from: 'LumenZenith <noreply@lumenzenith.com>',
             to: validated.email,
-            subject: 'Your Lead Has Been Submitted - LumenZenith',
+            subject: 'Your Request Has Been Submitted - LumenZenith',
             html: `
               <!DOCTYPE html>
               <html>
