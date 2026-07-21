@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Do not crawl API endpoints
+Disallow: /api/
+
+# Do not crawl internal/admin routes
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /login/
+Disallow: /signup/
+
+# Do not crawl Next.js internal files
+Disallow: /_next/
+
+# Sitemap
+Sitemap: https://www.lumenzenith.com/sitemap.xml
