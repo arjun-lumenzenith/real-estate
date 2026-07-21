@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyTurnstileToken } from '@/lib/turnstile'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,7 +58,54 @@ export async function GET(req: NextRequest) {
 // POST - Create a new lead
 export async function POST(req: NextRequest) {
   try {
-    // Try to use database if available
+    const body = await req.json()
+
+    const {
+      turnstileToken,
+      ...leadData
+    } = body
+
+    // CAPTCHA token must exist
+    if (!turnstileToken) {
+      return NextResponse.json(
+        {
+          error: 'Security verification is required.',
+        },
+        {
+          status: 400,
+        }
+      )
+    }
+
+    // Get client IP
+    const forwardedFor = req.headers.get('x-forwarded-for')
+    const clientIp = forwardedFor
+      ?.split(',')
+      .at(0)
+      ?.trim()
+
+    // Verify token with Cloudflare
+    const turnstileResult = await verifyTurnstileToken(
+      turnstileToken,
+      clientIp
+    )
+
+    if (!turnstileResult.success) {
+      console.warn('[POST /api/leads] Turnstile validation failed', {
+        errorCodes: turnstileResult['error-codes'],
+      })
+
+      return NextResponse.json(
+        {
+          error: 'Security verification failed. Please try again.',
+        },
+        {
+          status: 403,
+        }
+      )
+    }
+
+    // Only after CAPTCHA succeeds do we access the database
     try {
       const { createLeadSchema } = await import('@/lib/validations')
       const { getDb, withDbRetry } = await import('@/lib/db')
@@ -84,7 +132,7 @@ export async function POST(req: NextRequest) {
       const body = await req.json()
 
       // Validate input
-      const validated = createLeadSchema.parse(body)
+      const validated = createLeadSchema.parse(leadData)
 
       // Convert arrays to comma-separated strings for database storage
       const processedData = {
