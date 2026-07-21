@@ -1,6 +1,6 @@
 'use server'
 
-import { getDb } from '@/lib/db'
+import { getDb, withDbRetry } from '@/lib/db'
 import { property, builder } from '@/lib/db/schema'
 import {
   createPropertySchema,
@@ -11,20 +11,28 @@ import {
 import { cache, cacheKeys } from '@/lib/cache'
 import { eq, and, like, between, desc } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { v4 as uuidv4 } from 'uuid'
 
 export async function searchProperties(input: SearchPropertiesInput) {
   try {
     const validated = searchPropertiesSchema.parse(input)
-    const cacheKey = cacheKeys.properties(validated.locality, String(validated.minBudget))
-
+    const cacheKey = cacheKeys.properties(
+      (validated.localities ?? []).slice().sort().join(','),
+      (validated.bhkTypes ?? []).slice().sort().join(','),
+      String(validated.minBudget ?? ''),
+      String(validated.maxBudget ?? ''),
+      String(validated.builderId ?? ''),
+      String(validated.page),
+      String(validated.limit)
+    )
+    
     // Try cache first
     const cachedProperties = await cache.get(cacheKey)
     if (cachedProperties) {
       return { success: true, data: cachedProperties }
     }
 
-    let query = getDb().select().from(property)
+    let query = await withDbRetry(() =>
+      getDb().select().from(property))
 
     // Apply filters
     const filters = [eq(property.status, 'available')]
@@ -79,10 +87,12 @@ export async function getProperty(id: string) {
       return { success: true, data: cachedProperty }
     }
 
-    const result = await db
-      .select()
-      .from(properties)
-      .where(eq(properties.id, id))
+    const result = await withDbRetry(() =>
+      getDb()
+        .select()
+        .from(properties)
+        .where(eq(properties.id, id))
+    )
 
     if (!result.length) {
       throw new Error('Property not found')
@@ -108,10 +118,12 @@ export async function getPropertyWithBuilder(id: string) {
       return { success: true, data: cached }
     }
 
-    const result = await db
-      .select()
-      .from(properties)
-      .where(eq(properties.id, id))
+    const result = await withDbRetry(() =>
+      getDb()
+        .select()
+        .from(properties)
+        .where(eq(properties.id, id))
+    )
 
     if (!result.length) {
       throw new Error('Property not found')
@@ -150,12 +162,14 @@ export async function getFeaturedProperties() {
       return { success: true, data: cached }
     }
 
-    const result = await db
-      .select()
-      .from(property)
-      .where(eq(property.status, 'available'))
-      .orderBy(desc(property.createdAt))
-      .limit(3)
+    const result = await withDbRetry(() =>
+      getDb()
+        .select()
+        .from(property)
+        .where(eq(property.status, 'available'))
+        .orderBy(desc(property.createdAt))
+        .limit(3)
+    )
 
     // Cache for 24 hours
     await cache.set(cacheKey, result, { ttl: 86400 })
@@ -177,17 +191,19 @@ export async function getPropertiesByLocality(locality: string) {
       return { success: true, data: cached }
     }
 
-    const result = await db
-      .select()
-      .from(property)
-      .where(
-        and(
-          eq(property.status, 'available'),
-          like(property.locality, `%${locality}%`)
+    const result = await withDbRetry(() =>
+      getDb()
+        .select()
+        .from(property)
+        .where(
+          and(
+            eq(property.status, 'available'),
+            like(property.locality, `%${locality}%`)
+          )
         )
+        .orderBy(desc(property.createdAt))
+        .limit(20)
       )
-      .orderBy(desc(property.createdAt))
-      .limit(20)
 
     // Cache for 1 hour
     await cache.set(cacheKey, result, { ttl: 3600 })

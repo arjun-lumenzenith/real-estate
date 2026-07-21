@@ -1,14 +1,13 @@
 'use server'
 
 import { auth } from '@/lib/auth'
-import { getDb } from '@/lib/db'
+import { getDb, withDbRetry } from '@/lib/db'
 import { lead, inquiry } from '@/lib/db/schema'
 import { createLeadSchema, updateLeadSchema, type CreateLeadInput, type UpdateLeadInput } from '@/lib/validations'
 import { cache, cacheKeys } from '@/lib/cache'
 import { eq, and, desc } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { v4 as uuidv4 } from 'uuid'
 
 async function getUserId() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -23,16 +22,17 @@ export async function createLead(input: CreateLeadInput) {
 
     const referenceId = `REF-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`
 
-    const result = await db
-      .insert(lead)
-      .values({
-        id: uuidv4(),
-        userId,
-        ...validated,
-        referenceId,
-        status: 'new',
-      })
-      .returning()
+    const result = await withDbRetry(() =>
+      getDb()
+        .insert(lead)
+        .values({
+          userId,
+          ...validated,
+          referenceId,
+          status: 'new',
+        })
+        .returning()
+      )
 
     // Invalidate cache
     await cache.delete(cacheKeys.leads(userId))
@@ -63,13 +63,15 @@ export async function getLeads(page: number = 1, limit: number = 20) {
 
     const offset = (page - 1) * limit
 
-    const result = await db
-      .select()
-      .from(lead)
-      .where(eq(lead.userId, userId))
-      .orderBy(desc(lead.createdAt))
-      .limit(limit)
-      .offset(offset)
+    const result = await withDbRetry(() =>
+      getDb()
+        .select()
+        .from(lead)
+        .where(eq(lead.userId, userId))
+        .orderBy(desc(lead.createdAt))
+        .limit(limit)
+        .offset(offset)
+    )
 
     // Cache for 5 minutes
     await cache.set(cacheKey, result, { ttl: 300 })
@@ -92,10 +94,12 @@ export async function getLead(id: string) {
       return { success: true, data: cachedLead }
     }
 
-    const result = await db
-      .select()
-      .from(lead)
-      .where(and(eq(lead.id, id), eq(lead.userId, userId)))
+    const result = await withDbRetry(() =>
+      getDb()
+        .select()
+        .from(lead)
+        .where(and(eq(lead.id, id), eq(lead.userId, userId)))
+    )
 
     if (!result.length) {
       throw new Error('Lead not found')
@@ -116,14 +120,26 @@ export async function updateLead(id: string, input: UpdateLeadInput) {
     const userId = await getUserId()
     const validated = updateLeadSchema.parse(input)
 
-    const result = await db
-      .update(lead)
-      .set({
-        ...validated,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(lead.id, id), eq(lead.userId, userId)))
-      .returning()
+    const result = await withDbRetry(
+      () =>
+        getDb()
+          .update(lead)
+          .set({
+            ...validated,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(lead.id, Number(id)),
+              eq(lead.userId, userId)
+            )
+          )
+          .returning(),
+      {
+        retries: 2,
+        initialDelayMs: 100,
+      }
+    )
 
     if (!result.length) {
       throw new Error('Lead not found')
@@ -151,10 +167,23 @@ export async function deleteLead(id: string) {
     await getDb().delete(inquiry).where(eq(inquiry.leadId, id))
 
     // Delete lead
-    const result = await db
-      .delete(lead)
-      .where(and(eq(lead.id, id), eq(lead.userId, userId)))
-      .returning()
+    const result = await withDbRetry(() =>
+      getDb().transaction(async (tx) => {
+        await tx
+          .delete(inquiry)
+          .where(eq(inquiry.leadId, Number(id)))
+    
+        return tx
+          .delete(lead)
+          .where(
+            and(
+              eq(lead.id, Number(id)),
+              eq(lead.userId, userId)
+            )
+          )
+          .returning()
+      })
+    )
 
     if (!result.length) {
       throw new Error('Lead not found')
@@ -178,20 +207,24 @@ export async function getLeadInquiries(leadId: string) {
     const userId = await getUserId()
 
     // Verify lead belongs to user
-    const leadCheck = await db
-      .select()
-      .from(lead)
-      .where(and(eq(lead.id, leadId), eq(lead.userId, userId)))
+    const leadCheck = await withDbRetry(() =>
+      getDb()
+        .select()
+        .from(lead)
+        .where(and(eq(lead.id, leadId), eq(lead.userId, userId)))
+    )
 
     if (!leadCheck.length) {
       throw new Error('Lead not found')
     }
 
-    const result = await db
-      .select()
-      .from(inquiry)
-      .where(eq(inquiry.leadId, leadId))
-      .orderBy(desc(inquiry.createdAt))
+    const result = await withDbRetry(() =>
+      getDb()
+        .select()
+        .from(inquiry)
+        .where(eq(inquiry.leadId, leadId))
+        .orderBy(desc(inquiry.createdAt))
+    )
 
     return { success: true, data: result }
   } catch (error) {

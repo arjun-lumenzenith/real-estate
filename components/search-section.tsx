@@ -83,7 +83,7 @@ export function SearchSection({ locs, setLocs, buds, setBuds, bhks, setBhks }: a
       
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '10',
+        limit: '10'
       })
       // 1. Join all localities with a comma
       if (locs && locs.length > 0) {
