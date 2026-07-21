@@ -166,14 +166,80 @@ export async function POST(req: NextRequest) {
           const { Resend } = await import('resend')
           const resend = new Resend(process.env.RESEND_API_KEY)
           await resend.emails.send({
-            from: 'noreply@lumenzenith.com',
+            from: 'LumenZenith <noreply@lumenzenith.com>',
             to: validated.email,
             subject: 'Your Lead Has Been Submitted - LumenZenith',
             html: `
-              <h2>Thank you for your interest!</h2>
-              <p>Your reference ID: <strong>${referenceId}</strong></p>
-              <p>We will contact you soon about available properties in ${processedData.locality || 'your preferred locations'}.</p>
-            `,
+              <!DOCTYPE html>
+              <html>
+                <body style="font-family: Arial, Helvetica, sans-serif; color:#333333; line-height:1.6;">
+
+                  <h2 style="color:#1a73e8;">Thank you for your interest!</h2>
+
+                  <p>
+                    We have successfully received your enquiry.
+                  </p>
+
+                  <p>
+                    <strong>Reference ID:</strong> ${referenceId}
+                  </p>
+
+                  <p>
+                    We will contact you soon regarding properties in
+                    <strong>${processedData.locality || 'your preferred locations'}</strong>.
+                  </p>
+
+                  <p>
+                    Thank you for choosing <strong>LumenZenith</strong>.
+                  </p>
+
+                  <br>
+
+                  <hr style="border:none;border-top:1px solid #dcdcdc;">
+
+                  <table cellpadding="0" cellspacing="0" style="font-size:13px;color:#666666;">
+                    <tr>
+                      <td>
+                        <strong style="font-size:15px;color:#222222;">
+                          LumenZenith Realty OPC Pvt. Ltd.
+                        </strong>
+
+                        <br><br>
+
+                        📱 <a href="tel:+919900891647" style="color:#1a73e8;text-decoration:none;">
+                          +91 9900891647
+                        </a>
+
+                        <br>
+
+                        🌐 <a href="https://www.lumenzenith.com"
+                              style="color:#1a73e8;text-decoration:none;">
+                          www.lumenzenith.com
+                        </a>
+
+                        <br>
+
+                        📍 Bengaluru, Karnataka, India
+
+                        <br><br>
+
+                        <span style="font-size:12px;color:#888888;">
+                          Registered Real Estate Agent under the Karnataka RERA Act
+                        </span>
+
+                        <br>
+
+                        <span style="font-size:11px;color:#999999;">
+                          This is an automated email. Please do not reply to this message.
+                        </span>
+
+                      </td>
+                    </tr>
+                  </table>
+
+                </body>
+              </html>
+              `,
           })
         } catch (emailError) {
           console.error('[Email Send Error]', emailError)
