@@ -249,7 +249,7 @@ export function SearchSection({ locs, setLocs, buds, setBuds, bhks, setBhks }: a
           )}
         </div>
 
-        {/* Pagination */}
+        {/* Pagination section */}
         <Pagination
           currentPage={currentPage}
           totalPages={paginationData.totalPages}
