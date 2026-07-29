@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Turnstile } from '@marsidev/react-turnstile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -61,6 +62,7 @@ export function LeadForm({ isDialog = false }: LeadFormProps) {
   const [referenceId, setReferenceId] = useState("")
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState("")
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [form, setForm] = useState({
     name: '',
     mobile: '',
@@ -92,6 +94,7 @@ export function LeadForm({ isDialog = false }: LeadFormProps) {
     setErrors({})
     setSubmitted(false)
     setReferenceId("")
+    setTurnstileToken(null)
 
     setTimeout(() => {
       document.getElementById("name")?.focus()
@@ -115,6 +118,11 @@ export function LeadForm({ isDialog = false }: LeadFormProps) {
       return
     }
     
+    if (!turnstileToken) {
+      setApiError('Please complete the security verification.')
+      return
+    }
+
     setLoading(true)
     setApiError("")
     
@@ -135,6 +143,7 @@ export function LeadForm({ isDialog = false }: LeadFormProps) {
           locality: form.locality.length > 0 ? form.locality : undefined,
           budgetRange: form.budget,
           bhkRequirement: form.bhk.length > 0 ? form.bhk : undefined,
+          turnstileToken,
         }),
       })
 
@@ -471,6 +480,25 @@ export function LeadForm({ isDialog = false }: LeadFormProps) {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Cloudflare Turnstile CAPTCHA */}
+              <div className="flex justify-center">
+                <Turnstile
+                  siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+                  onSuccess={(token) => {
+                    setTurnstileToken(token)
+                    setApiError("")
+                  }}
+                  onError={() => {
+                    setTurnstileToken(null)
+                    setApiError('Security verification failed. Please try again.')
+                  }}
+                  onExpire={() => {
+                    setTurnstileToken(null)
+                    setApiError('Security verification expired. Please verify again.')
+                  }}
+                />
               </div>
 
               {/* Submit */}
