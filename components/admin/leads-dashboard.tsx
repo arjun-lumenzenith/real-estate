@@ -312,7 +312,7 @@ export function LeadsDashboard({ initialData, initialPagination, role, admin }: 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button render={<Link href="/" target="_blank" />} variant="outline" size="sm">
+            <Button render={<Link href="/" target="_blank" />} nativeButton={false} variant="outline" size="sm">
               <ExternalLink className="mr-1.5 h-4 w-4" />
               View site
             </Button>
