@@ -44,6 +44,16 @@ function initializeAuth() {
         enabled: true,
         minPasswordLength: 8,
       },
+      user: {
+        additionalFields: {
+          role: {
+            type: 'string',
+            required: false,
+            defaultValue: 'user',
+            input: false, // never settable via sign-up / client
+          },
+        },
+      },
       session: {
         expiresIn: 60 * 60 * 24 * 7, // 7 days
         updateAge: 60 * 60 * 24, // Update session every 24 hours
