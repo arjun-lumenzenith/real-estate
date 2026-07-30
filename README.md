@@ -11,6 +11,33 @@ The enterprise system is architected to balance human-centric client onboarding 
 - **Serverless Form Processing:** Completely secure data pipeline tracking customer profiles without rendering vulnerability footprint on the client side.
 - **Karnataka RERA Compliant Architecture:** Layout structures explicitly mapped out to honor regulatory transparency criteria for RERA-registered projects across Karnataka.
 
+## 🔐 Admin Panel (RBAC)
+
+A private, role-gated admin area for managing leads. It is **not linked anywhere in the public site** and is protected both by middleware (cookie gate) and server-side role checks.
+
+- **URL:** `/admin` (login page at `/admin/login`)
+- **Roles:**
+  - `viewer` — read-only access to the leads table (filter, sort, paginate, arrange columns).
+  - `editor` — everything a viewer can do, plus edit and delete leads.
+- **Leads table:** server-side pagination (latest leads first), text search, status filter, column sorting, show/hide columns, and drag-and-drop column reordering. Each admin's column order and visibility are saved to `localStorage`, so they persist across refreshes and logins on the same browser.
+
+### Seeding admin accounts
+
+There is no public registration. Two admin accounts are created by calling the one-time seed endpoint (idempotent — safe to call again, it no-ops once admins exist):
+
+```bash
+curl -X POST https://<your-app-url>/api/admin/seed
+```
+
+Default seeded credentials (⚠️ **change these in production** via the seed endpoint env vars or by resetting the passwords):
+
+| Role     | Email                     | Password       |
+| -------- | ------------------------- | -------------- |
+| `editor` | `admin@realestate.com`    | `Admin@12345`  |
+| `viewer` | `viewer@realestate.com`   | `Viewer@12345` |
+
+You can override the defaults by setting `ADMIN_EDITOR_EMAIL`, `ADMIN_EDITOR_PASSWORD`, `ADMIN_VIEWER_EMAIL`, and `ADMIN_VIEWER_PASSWORD` before calling the seed endpoint.
+
 ## 🛠️ Tech Stack & Infrastructure
 
 - **Frontend Core:** Next.js 15 (React Framework using the optimized App Router paradigm)
