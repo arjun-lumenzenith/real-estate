@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { getPool } from './db'
 
-// Build trusted origins list for cookie security
+// Build the static trusted origins list for cookie security.
 const getOrigins = () => {
   const origins: string[] = []
 
@@ -22,8 +22,37 @@ const getOrigins = () => {
 
   // Local development
   origins.push('http://localhost:3000')
+  origins.push('http://127.0.0.1:3000')
 
   return origins
+}
+
+/**
+ * Trusted origins as a function so we can also trust the origin of the incoming
+ * request itself. This makes auth work across the v0 preview iframe, Vercel
+ * preview/production deployments, and local dev without hard-coding every host.
+ * We only auto-trust hosts we know are ours (localhost + *.vusercontent.net +
+ * *.vercel.app) so this does not weaken CSRF protection for arbitrary origins.
+ */
+const trustedOrigins = (request?: Request): string[] => {
+  const origins = getOrigins()
+
+  const header = request?.headers?.get?.('origin') || request?.headers?.get?.('referer')
+  if (header) {
+    try {
+      const { origin, hostname, protocol } = new URL(header)
+      const isLoopback = hostname === 'localhost' || hostname === '127.0.0.1'
+      const isOwnPlatform =
+        hostname.endsWith('.vusercontent.net') || hostname.endsWith('.vercel.app')
+      if ((protocol === 'https:' && isOwnPlatform) || isLoopback) {
+        origins.push(origin)
+      }
+    } catch {
+      // ignore malformed origin/referer headers
+    }
+  }
+
+  return Array.from(new Set(origins))
 }
 
 // Lazy initialization of auth to defer database access until runtime
@@ -39,10 +68,20 @@ function initializeAuth() {
       database: getPool(),
       secret: process.env.BETTER_AUTH_SECRET,
       baseURL: process.env.BETTER_AUTH_URL || getOrigins()[0],
-      trustedOrigins: getOrigins(),
+      trustedOrigins,
       emailAndPassword: {
         enabled: true,
         minPasswordLength: 8,
+      },
+      user: {
+        additionalFields: {
+          role: {
+            type: 'string',
+            required: false,
+            defaultValue: 'user',
+            input: false, // never settable via sign-up / client
+          },
+        },
       },
       session: {
         expiresIn: 60 * 60 * 24 * 7, // 7 days
