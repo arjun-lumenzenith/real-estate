@@ -312,11 +312,9 @@ export function LeadsDashboard({ initialData, initialPagination, role, admin }: 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href="/" target="_blank">
-                <ExternalLink className="mr-1.5 h-4 w-4" />
-                View site
-              </Link>
+            <Button render={<Link href="/" target="_blank" />} variant="outline" size="sm">
+              <ExternalLink className="mr-1.5 h-4 w-4" />
+              View site
             </Button>
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut className="mr-1.5 h-4 w-4" />
@@ -376,11 +374,9 @@ export function LeadsDashboard({ initialData, initialPagination, role, admin }: 
 
           {/* Column controls */}
           <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                <SlidersHorizontal className="mr-1.5 h-4 w-4" />
-                Columns
-              </Button>
+            <PopoverTrigger render={<Button variant="outline" size="sm" />}>
+              <SlidersHorizontal className="mr-1.5 h-4 w-4" />
+              Columns
             </PopoverTrigger>
             <PopoverContent align="end" className="w-72">
               <div className="mb-2 flex items-center justify-between">
