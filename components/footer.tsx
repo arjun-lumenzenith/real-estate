@@ -283,7 +283,7 @@ export function Footer({ locs = [], setLocs }: FooterProps) {
             style={{ fontFamily: 'var(--font-body)' }}
           >
             &copy; {new Date().getFullYear()} LumenZenith Realty Pvt. Ltd. All rights reserved.
-            RERA Reg. No: PRM/KA/RERA/7890/AG
+            RERA Reg. No: To be updated soon
           </p>
           <p
             className="text-xs text-muted-foreground"
