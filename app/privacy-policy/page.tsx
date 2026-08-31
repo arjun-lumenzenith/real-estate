@@ -83,11 +83,11 @@ const SECTIONS = [
     title: 'Contact Us',
     body: [
       'If you have questions about this Privacy Policy or how your data is handled, contact:',
-      'LumenZenith Realty Pvt. Ltd.',
-      '235, 2nd & 3rd Floor, 13th Cross Road, Indiranagar 2nd Stage, Hoysala Nagar, Bangalore — 560038',
+      'LumenZenith Realty (OPC) Pvt. Ltd.',
+      '235, 2nd Floor, 13th Cross Road, Indiranagar 2nd Stage, Hoysala Nagar, Bangalore — 560038',
       'Email: info@lumenzenith.com',
-      'Phone: +91 99008 91647',
-      'RERA Reg. No: PRM/KA/RERA/7890/AG',
+      'Phone: +919900891647',
+      'KRERA Agent Registration Status: Under Process (Application Number: ACK/KA/RERA/1251/309/AG/260825/008302)',
     ],
   },
 ]
