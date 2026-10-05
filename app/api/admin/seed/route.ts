@@ -1,30 +1,28 @@
+import { randomBytes } from 'node:crypto'
 import { NextResponse } from 'next/server'
+import { inArray } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { getDb } from '@/lib/db'
 import { user } from '@/lib/db/schema'
-import { eq, inArray } from 'drizzle-orm'
+import { validatePassword } from '@/lib/password-policy'
 
 /**
- * One-time, idempotent admin seeding.
+ * One-time, idempotent admin seeding. Public sign-up is disabled, so accounts
+ * are created directly through Better Auth's internal adapter (same password
+ * hashing as the login flow). Once any admin exists this endpoint is a no-op.
  *
- * Creates two admin accounts using Better Auth's own sign-up API (so the
- * password hashing matches the login flow), then promotes them to the
- * appropriate admin roles. Once any admin exists this endpoint becomes a
- * no-op, so it is safe to call multiple times.
- *
- * Credentials can be overridden with environment variables; otherwise the
- * documented defaults are used (change these after first login).
+ * Passwords come from ADMIN_EDITOR_PASSWORD / ADMIN_VIEWER_PASSWORD and must
+ * satisfy the password policy. If unset, a strong random password is generated
+ * and returned exactly once in the response.
  */
-const EDITOR_EMAIL = process.env.ADMIN_EDITOR_EMAIL || 'admin@realestate.com'
-const EDITOR_PASSWORD = process.env.ADMIN_EDITOR_PASSWORD || 'Admin@12345'
-const VIEWER_EMAIL = process.env.ADMIN_VIEWER_EMAIL || 'viewer@realestate.com'
-const VIEWER_PASSWORD = process.env.ADMIN_VIEWER_PASSWORD || 'Viewer@12345'
+function generatePassword() {
+  return `${randomBytes(12).toString('base64url')}!7aZ`
+}
 
 export async function POST() {
   try {
     const db = getDb()
 
-    // Already seeded? No-op.
     const existingAdmins = await db
       .select({ id: user.id })
       .from(user)
@@ -40,39 +38,58 @@ export async function POST() {
     }
 
     const accounts = [
-      { email: EDITOR_EMAIL, password: EDITOR_PASSWORD, name: 'Admin (Editor)', role: 'editor' as const },
-      { email: VIEWER_EMAIL, password: VIEWER_PASSWORD, name: 'Admin (Viewer)', role: 'viewer' as const },
+      {
+        email: process.env.ADMIN_EDITOR_EMAIL || 'admin@realestate.com',
+        password: process.env.ADMIN_EDITOR_PASSWORD || generatePassword(),
+        name: 'Admin (Editor)',
+        role: 'editor' as const,
+      },
+      {
+        email: process.env.ADMIN_VIEWER_EMAIL || 'viewer@realestate.com',
+        password: process.env.ADMIN_VIEWER_PASSWORD || generatePassword(),
+        name: 'Admin (Viewer)',
+        role: 'viewer' as const,
+      },
     ]
 
-    const created: { email: string; role: string }[] = []
+    for (const acct of accounts) {
+      const reason = validatePassword(acct.password, acct.email)
+      if (reason) {
+        return NextResponse.json(
+          { success: false, error: `Password for ${acct.email} rejected: ${reason}` },
+          { status: 400 },
+        )
+      }
+    }
+
+    const ctx = await auth.$context
+    const created: { email: string; role: string; password: string }[] = []
 
     for (const acct of accounts) {
-      // Create the user through Better Auth so the password hash is valid.
-      try {
-        await auth.api.signUpEmail({
-          body: { email: acct.email, password: acct.password, name: acct.name },
-        })
-      } catch (err) {
-        // If the user already exists (created but not yet promoted), continue to role update.
-        console.log('[v0] admin seed signup note:', (err as Error)?.message)
-      }
-
-      // Promote to the admin role.
-      await db.update(user).set({ role: acct.role }).where(eq(user.email, acct.email))
-      created.push({ email: acct.email, role: acct.role })
+      const hash = await ctx.password.hash(acct.password)
+      const newUser = await ctx.internalAdapter.createUser({
+        email: acct.email.toLowerCase(),
+        name: acct.name,
+        emailVerified: true,
+        role: acct.role,
+      })
+      await ctx.internalAdapter.linkAccount({
+        userId: newUser.id,
+        providerId: 'credential',
+        accountId: newUser.id,
+        password: hash,
+      })
+      created.push({ email: acct.email, role: acct.role, password: acct.password })
     }
 
     return NextResponse.json({
       success: true,
       seeded: true,
-      message: 'Admin accounts created.',
+      message: 'Admin accounts created. Store these passwords now; they are not shown again.',
       accounts: created,
     })
   } catch (error) {
     console.error('[Admin Seed] Error:', error)
-    return NextResponse.json(
-      { success: false, error: (error as Error)?.message || 'Failed to seed admins' },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: false, error: 'Failed to seed admins' }, { status: 500 })
   }
 }

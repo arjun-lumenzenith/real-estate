@@ -29,14 +29,18 @@ There is no public registration. Two admin accounts are created by calling the o
 curl -X POST https://<your-app-url>/api/admin/seed
 ```
 
-Default seeded credentials (⚠️ **change these in production** via the seed endpoint env vars or by resetting the passwords):
+Default emails are `admin@realestate.com` (editor) and `viewer@realestate.com` (viewer). Set `ADMIN_EDITOR_EMAIL`, `ADMIN_EDITOR_PASSWORD`, `ADMIN_VIEWER_EMAIL`, and `ADMIN_VIEWER_PASSWORD` to choose your own. If a password is not set, a strong random one is generated and returned **once** in the seed response, so save it right away. Passwords must meet the password policy below.
 
-| Role     | Email                     | Password       |
-| -------- | ------------------------- | -------------- |
-| `editor` | `admin@realestate.com`    | `Admin@12345`  |
-| `viewer` | `viewer@realestate.com`   | `Viewer@12345` |
+To change a password later, sign in and use **Account → Change password**.
 
-You can override the defaults by setting `ADMIN_EDITOR_EMAIL`, `ADMIN_EDITOR_PASSWORD`, `ADMIN_VIEWER_EMAIL`, and `ADMIN_VIEWER_PASSWORD` before calling the seed endpoint.
+### Security controls
+
+- **Rate limiting:** 5 sign-in attempts per minute per IP (stored in Postgres so the limit holds across serverless instances).
+- **Account lockout:** 5 failed sign-ins within 15 minutes locks that email for 15 minutes.
+- **Password policy:** 12–128 characters, with uppercase, lowercase, number, and symbol. Passwords containing the email name or common weak patterns are rejected.
+- **Sessions:** 8-hour idle timeout plus a hard 24-hour limit from sign-in. Changing your password signs out your other sessions.
+- **Sign out:** the Account menu has **Sign out** and **Sign out of all devices**.
+- **Security headers:** HSTS, `nosniff`, Referrer-Policy, Permissions-Policy, and a report-only Content-Security-Policy (see `next.config.mjs`).
 
 ## 🛠️ Tech Stack & Infrastructure
 

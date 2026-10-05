@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Pagination } from '@/components/pagination'
 import { EditLeadDialog } from '@/components/admin/edit-lead-dialog'
+import { AccountMenu } from '@/components/admin/account-menu'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -256,11 +257,6 @@ export function LeadsDashboard({ initialData, initialPagination, role, admin }: 
     }
   }
 
-  const handleSignOut = async () => {
-    await authClient.signOut()
-    router.push('/admin/login')
-    router.refresh()
-  }
 
   const orderedVisibleColumns = order.filter((k) => visible[k])
   const visibleCount = orderedVisibleColumns.length
@@ -316,10 +312,7 @@ export function LeadsDashboard({ initialData, initialPagination, role, admin }: 
               <ExternalLink className="mr-1.5 h-4 w-4" />
               View site
             </Button>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="mr-1.5 h-4 w-4" />
-              Sign out
-            </Button>
+            <AccountMenu email={admin.email} />
           </div>
         </div>
       </header>

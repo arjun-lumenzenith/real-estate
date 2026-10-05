@@ -1,6 +1,6 @@
 import 'server-only'
 import { headers } from 'next/headers'
-import { auth } from '@/lib/auth'
+import { auth, SESSION_ABSOLUTE_MAX_SECONDS } from '@/lib/auth'
 
 export type AdminRole = 'viewer' | 'editor'
 
@@ -23,8 +23,19 @@ function normalizeRole(role: unknown): AdminRole | null {
  * authenticated or does not hold an admin role.
  */
 export async function getAdminSession(): Promise<AdminSession | null> {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const requestHeaders = await headers()
+  const session = await auth.api.getSession({ headers: requestHeaders })
   if (!session?.user) return null
+
+  // Hard cap: even an active session cannot outlive SESSION_ABSOLUTE_MAX_SECONDS.
+  const createdAt = new Date(session.session?.createdAt ?? 0).getTime()
+  if (!createdAt || Date.now() - createdAt > SESSION_ABSOLUTE_MAX_SECONDS * 1000) {
+    await auth.api.revokeSession({
+      headers: requestHeaders,
+      body: { token: session.session.token },
+    }).catch(() => {})
+    return null
+  }
 
   const role = normalizeRole((session.user as { role?: string }).role)
   if (!role) return null

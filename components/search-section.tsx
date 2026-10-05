@@ -8,7 +8,7 @@ import { Search, MapPin, IndianRupee, Home, SlidersHorizontal, ChevronDown, X } 
 import Image from 'next/image'
 import { Pagination } from '@/components/pagination'
 
-const LOCALITIES = ['Whitefield', 'Sarjapur Road', 'Electronic City', 'Hebbal', 'Kanakapura Road', 'Bannerghatta Road', 'Koramangala', 'Indiranagar', 'Yelahanka', 'Devanahalli', 'North Bangalore']
+const LOCALITIES = ['Whitefield', 'Varthur', 'Old Madras Road', 'Budigere', 'Mysore Road', 'Rajarajeshwari Nagar', 'Sarjapur Road', 'Electronic City', 'Hebbal', 'Kanakapura Road', 'Bannerghatta Road', 'Koramangala', 'Indiranagar', 'Yelahanka', 'Devanahalli', 'North Bangalore']
 const BUDGETS = ['Under ₹50 Lakhs', '₹50 L — ₹1 Cr', '₹1 Cr — ₹1.5 Cr', '₹1.5 Cr — ₹2 Cr', '₹2 Cr — ₹3 Cr', '₹3 Cr — ₹5 Cr', 'Above ₹5 Cr']
 const BHK_TYPES = ['1 BHK', '2 BHK', '3 BHK', '4 BHK', '4+ BHK / Penthouse']
 
@@ -18,7 +18,8 @@ const FEATURED = [
   { image: '/property-3.png', name: 'Sobha City', locality: 'Whitefield', builder: 'Sobha Limited', price: '₹1.2 Cr onwards', bhk: '2, 3, 4 BHK', status: 'New Launch', rera: 'PRM/KA/RERA/1102' }
 ]
 
-const STATUS_COLORS: Record<string, string> = { 'Under Construction': 'oklch(0.65 0.14 60)', 'Ready to Move': 'oklch(0.65 0.14 150)', 'New Launch': 'oklch(0.75 0.12 80)' }
+const STATUS_LABELS: Record<string, string> = { available: 'Available', upcoming: 'Upcoming', sold_out: 'Sold Out', archived: 'Archived' }
+const STATUS_COLORS: Record<string, string> = { 'Under Construction': 'oklch(0.65 0.14 60)', 'Ready to Move': 'oklch(0.65 0.14 150)', 'New Launch': 'oklch(0.75 0.12 80)', available: 'oklch(0.65 0.14 150)', upcoming: 'oklch(0.75 0.12 80)', sold_out: 'oklch(0.6 0.15 25)', archived: 'oklch(0.6 0.02 255)' }
 
 const parseBudgetToNumber = (budgetText: string): string => {
   if (!budgetText) return '0'
@@ -230,7 +231,7 @@ export function SearchSection({ locs, setLocs, buds, setBuds, bhks, setBhks }: a
                 ) : (
                   <div className="text-muted-foreground text-sm">No image available</div>
                 )}
-                <span className="absolute top-3 left-3 text-[10px] tracking-widest uppercase font-medium px-2 py-1" style={{ fontFamily: 'var(--font-body)', backgroundColor: `${STATUS_COLORS[p.status]}20`, color: STATUS_COLORS[p.status], border: `1px solid ${STATUS_COLORS[p.status]}30` }}>{p.status}</span>
+                <span className="absolute top-3 left-3 text-[10px] tracking-widest uppercase font-medium px-2 py-1" style={{ fontFamily: 'var(--font-body)', backgroundColor: `${STATUS_COLORS[p.status]}20`, color: STATUS_COLORS[p.status], border: `1px solid ${STATUS_COLORS[p.status]}30` }}>{STATUS_LABELS[p.status] ?? p.status}</span>
               </div>
               <div className="p-6 flex flex-col gap-2.5">
                 <div>

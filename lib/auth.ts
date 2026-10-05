@@ -1,5 +1,18 @@
 import { betterAuth } from 'better-auth'
+import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { getPool } from './db'
+import {
+  clearFailedLogins,
+  getActiveLockout,
+  lockoutMessage,
+  normalizeEmail,
+  rateLimitStorage,
+  recordFailedLogin,
+} from './auth-security'
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, validatePassword } from './password-policy'
+
+export const SESSION_IDLE_TIMEOUT_SECONDS = 60 * 60 * 8
+export const SESSION_ABSOLUTE_MAX_SECONDS = 60 * 60 * 24
 
 // Build the static trusted origins list for cookie security.
 const getOrigins = () => {
@@ -71,7 +84,70 @@ function initializeAuth() {
       trustedOrigins,
       emailAndPassword: {
         enabled: true,
-        minPasswordLength: 8,
+        // Admin accounts are provisioned by the seed endpoint only.
+        disableSignUp: true,
+        minPasswordLength: PASSWORD_MIN_LENGTH,
+        maxPasswordLength: PASSWORD_MAX_LENGTH,
+        revokeSessionsOnPasswordReset: true,
+      },
+      rateLimit: {
+        enabled: true,
+        window: 60,
+        max: 100,
+        storage: 'custom-storage',
+        customStorage: rateLimitStorage,
+        customRules: {
+          '/sign-in/email': { window: 60, max: 5 },
+          '/change-password': { window: 300, max: 5 },
+          '/revoke-sessions': { window: 60, max: 10 },
+          '/get-session': false,
+        },
+      },
+      hooks: {
+        before: createAuthMiddleware(async (ctx) => {
+          if (ctx.path === '/sign-in/email') {
+            const email = normalizeEmail(ctx.body?.email)
+            if (!email) return
+            const lockedUntil = await getActiveLockout(email)
+            if (lockedUntil) {
+              throw new APIError('TOO_MANY_REQUESTS', {
+                message: lockoutMessage(lockedUntil),
+                code: 'ACCOUNT_LOCKED',
+              })
+            }
+            return
+          }
+
+          const candidate =
+            ctx.path === '/sign-up/email'
+              ? { password: ctx.body?.password, email: ctx.body?.email }
+              : ctx.path === '/change-password' || ctx.path === '/reset-password'
+                ? { password: ctx.body?.newPassword, email: null }
+                : null
+          if (candidate) {
+            const reason = validatePassword(candidate.password ?? '', candidate.email)
+            if (reason) {
+              throw new APIError('BAD_REQUEST', { message: reason, code: 'WEAK_PASSWORD' })
+            }
+          }
+        }),
+        after: createAuthMiddleware(async (ctx) => {
+          if (ctx.path !== '/sign-in/email') return
+          const email = normalizeEmail(ctx.body?.email)
+          if (!email) return
+
+          const returned = ctx.context.returned as
+            | { statusCode?: number; status?: string }
+            | undefined
+          const isError = returned instanceof Error
+          if (!isError) {
+            await clearFailedLogins(email)
+            return
+          }
+          if (returned?.statusCode === 401 || returned?.status === 'UNAUTHORIZED') {
+            await recordFailedLogin(email)
+          }
+        }),
       },
       user: {
         additionalFields: {
@@ -84,14 +160,21 @@ function initializeAuth() {
         },
       },
       session: {
-        expiresIn: 60 * 60 * 24 * 7, // 7 days
-        updateAge: 60 * 60 * 24, // Update session every 24 hours
+        // Idle timeout: a session expires after 8h without activity and is
+        // extended (at most hourly) while in use. A hard 24h cap from sign-in
+        // is enforced in lib/rbac.ts.
+        expiresIn: SESSION_IDLE_TIMEOUT_SECONDS,
+        updateAge: 60 * 60,
+        freshAge: 60 * 15,
         cookieCache: {
           enabled: true,
-          maxAge: 300, // Cache for 5 minutes
+          maxAge: 60,
         },
       },
       advanced: {
+        ipAddress: {
+          ipAddressHeaders: ['x-vercel-forwarded-for', 'x-forwarded-for', 'x-real-ip'],
+        },
         defaultCookieAttributes: {
           ...(process.env.NODE_ENV === 'development'
             ? {

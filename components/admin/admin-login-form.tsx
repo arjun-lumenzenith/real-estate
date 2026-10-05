@@ -27,7 +27,13 @@ export function AdminLoginForm({ redirectTo = '/admin' }: { redirectTo?: string 
       const { error: signInError } = await authClient.signIn.email({ email, password })
 
       if (signInError) {
-        setError('Invalid email or password.')
+        const isThrottled =
+          signInError.status === 429 || signInError.code === 'ACCOUNT_LOCKED'
+        setError(
+          isThrottled
+            ? signInError.message || 'Too many attempts. Please wait and try again.'
+            : 'Invalid email or password.',
+        )
         setLoading(false)
         return
       }
