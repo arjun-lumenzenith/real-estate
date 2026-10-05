@@ -225,6 +225,8 @@ export async function POST(req: NextRequest) {
 
                         <span style="font-size:12px;color:#888888;">
                           Registered Real Estate Agent under the Karnataka RERA Act
+                          <br>
+                          PRM/KA/RERA/1251/309/AG/260930/007945
                         </span>
 
                         <br>

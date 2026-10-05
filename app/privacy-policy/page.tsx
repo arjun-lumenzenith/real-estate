@@ -87,7 +87,7 @@ const SECTIONS = [
       '235, 2nd Floor, 13th Cross Road, Indiranagar 2nd Stage, Hoysala Nagar, Bangalore — 560038',
       'Email: info@lumenzenith.com',
       'Phone: +919900891647',
-      'KRERA Agent Registration Status: Under Process (Application Number: ACK/KA/RERA/1251/309/AG/260825/008302)',
+      'KRERA Agent ID:  PRM/KA/RERA/1251/309/AG/260930/007945',
     ],
   },
 ]
