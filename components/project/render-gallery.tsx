@@ -16,21 +16,24 @@ interface Render {
 export function RenderGallery({ renders, projectName }: { renders: Render[]; projectName: string }) {
   const [index, setIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
-  const [isInteracting, setIsInteracting] = useState(false)
+  const [isTabHidden, setIsTabHidden] = useState(false)
   const count = renders.length
   const go = (next: number) => setIndex((next + count) % count)
   const active = renders[index]
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setIsPlaying(false)
+    const onVisibilityChange = () => setIsTabHidden(document.hidden)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [])
 
   // Re-arms on every index change so manual navigation restarts the full interval.
   useEffect(() => {
-    if (!isPlaying || isInteracting || count < 2) return
+    if (!isPlaying || isTabHidden || count < 2) return
     const timer = window.setTimeout(() => setIndex((i) => (i + 1) % count), AUTOPLAY_INTERVAL_MS)
     return () => window.clearTimeout(timer)
-  }, [index, isPlaying, isInteracting, count])
+  }, [index, isPlaying, isTabHidden, count])
 
   return (
     <section
@@ -38,12 +41,6 @@ export function RenderGallery({ renders, projectName }: { renders: Render[]; pro
       className="scroll-mt-16 bg-background py-20 md:py-28"
       aria-roledescription="carousel"
       aria-label={`${projectName} renders`}
-      onMouseEnter={() => setIsInteracting(true)}
-      onMouseLeave={() => setIsInteracting(false)}
-      onFocus={() => setIsInteracting(true)}
-      onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setIsInteracting(false)
-      }}
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
