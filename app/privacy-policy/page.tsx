@@ -87,7 +87,7 @@ const SECTIONS = [
       '235, 2nd & 3rd Floor, 13th Cross Road, Indiranagar 2nd Stage, Hoysala Nagar, Bangalore — 560038',
       'Email: info@lumenzenith.com',
       'Phone: +91 99008 91647',
-      'RERA Reg. No: PRM/KA/RERA/7890/AG',
+      'RERA Reg. No: PRM/KA/RERA/1251/309/AG/260930/007945',
     ],
   },
 ]

@@ -10,9 +10,9 @@ export const sobhaOneWorld = {
   mapQuery: 'Sobha OneWorld, Old Madras Road, Hoskote, Bengaluru',
   overview:
     'A large, master-planned township by Sobha, built with the developer’s in-house design and construction. Residences open onto landscaped greens, with a full clubhouse and sports facilities inside the community.',
-  heroImage: '/projects/sobha-oneworld.png',
+  heroImage: '/projects/sobha-one-world-night-elevation.jpg',
   renders: [
-    { src: '/projects/sobha-oneworld.png', title: 'The Towers', caption: 'Exterior at dusk' },
+    { src: '/projects/sobha-one-world-night-elevation.jpg', title: 'The Towers', caption: 'Exterior at dusk' },
     { src: '/projects/sobha-oneworld/clubhouse-pool.png', title: 'Clubhouse & Pool', caption: 'Resort-style leisure deck' },
     { src: '/projects/sobha-oneworld/central-park.png', title: 'Central Greens', caption: 'Landscaped walking trails' },
     { src: '/projects/sobha-oneworld/living-room.png', title: 'Living Room', caption: 'Light-filled interiors' },
