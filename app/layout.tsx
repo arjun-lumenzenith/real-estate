@@ -102,6 +102,8 @@ export const viewport: Viewport = {
   themeColor: '#0d1525',
 }
 
+const GOOGLE_ADS_ID = 'AW-18496946753'
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -109,6 +111,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${cormorant.variable} ${inter.variable} bg-background`}>
+      <head>
+        {/* Google tag (gtag.js) */}
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}`} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GOOGLE_ADS_ID}');`,
+          }}
+        />
+      </head>
       <body className="antialiased font-sans">
 		<SeoSchema/>
         {children}
