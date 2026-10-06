@@ -55,9 +55,17 @@ const TRUST_POINTS = [
 
 interface LeadFormProps {
   isDialog?: boolean
+  heading?: string
+  subheading?: string
+  submitLabel?: string
 }
 
-export function LeadForm({ isDialog = false }: LeadFormProps) {
+export function LeadForm({
+  isDialog = false,
+  heading = 'Get a Free Callback',
+  subheading,
+  submitLabel = 'Request a Free Callback',
+}: LeadFormProps) {
   const [submitted, setSubmitted] = useState(false)
   const [referenceId, setReferenceId] = useState("")
   const [loading, setLoading] = useState(false)
@@ -264,12 +272,19 @@ export function LeadForm({ isDialog = false }: LeadFormProps) {
 
           {/* Right — form */}
           <div className={isDialog ? "" : "bg-card border border-border p-6 md:p-8 lg:col-span-1 col-span-1"}>
-            <h3
-              className="text-2xl font-light mb-8"
-              style={{ fontFamily: 'var(--font-display)' }}
-            >
-              Get a Free Callback
-            </h3>
+            <div className="mb-8 flex flex-col gap-2">
+              <h3
+                className="text-2xl font-light"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                {heading}
+              </h3>
+              {subheading && (
+                <p className="text-sm leading-relaxed text-muted-foreground" style={{ fontFamily: 'var(--font-body)' }}>
+                  {subheading}
+                </p>
+              )}
+            </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
               {apiError && (
@@ -508,7 +523,7 @@ export function LeadForm({ isDialog = false }: LeadFormProps) {
                 className="w-full rounded-none h-12 text-sm tracking-widest uppercase font-medium mt-2 disabled:opacity-70"
                 style={{ backgroundColor: 'oklch(0.75 0.12 80)', color: 'oklch(0.13 0.025 255)' }}
               >
-                {loading ? 'Submitting...' : 'Request a Free Callback'}
+                {loading ? 'Submitting...' : submitLabel}
               </Button>
 
               <p
