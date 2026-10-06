@@ -19,6 +19,7 @@ export async function generateMetadata({ params }: ThankYouPageProps): Promise<M
   return {
     title,
     description,
+    robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
     alternates: { canonical: url },
     openGraph: {
       title,
