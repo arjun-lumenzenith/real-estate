@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+const AUTOPLAY_INTERVAL_MS = 4000
 
 interface Render {
   src: string
@@ -13,12 +15,36 @@ interface Render {
 
 export function RenderGallery({ renders, projectName }: { renders: Render[]; projectName: string }) {
   const [index, setIndex] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [isInteracting, setIsInteracting] = useState(false)
   const count = renders.length
   const go = (next: number) => setIndex((next + count) % count)
   const active = renders[index]
 
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setIsPlaying(false)
+  }, [])
+
+  // Re-arms on every index change so manual navigation restarts the full interval.
+  useEffect(() => {
+    if (!isPlaying || isInteracting || count < 2) return
+    const timer = window.setTimeout(() => setIndex((i) => (i + 1) % count), AUTOPLAY_INTERVAL_MS)
+    return () => window.clearTimeout(timer)
+  }, [index, isPlaying, isInteracting, count])
+
   return (
-    <section id="renders" className="scroll-mt-16 bg-background py-20 md:py-28" aria-roledescription="carousel" aria-label={`${projectName} renders`}>
+    <section
+      id="renders"
+      className="scroll-mt-16 bg-background py-20 md:py-28"
+      aria-roledescription="carousel"
+      aria-label={`${projectName} renders`}
+      onMouseEnter={() => setIsInteracting(true)}
+      onMouseLeave={() => setIsInteracting(false)}
+      onFocus={() => setIsInteracting(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setIsInteracting(false)
+      }}
+    >
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 lg:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-col gap-3">
@@ -28,9 +54,20 @@ export function RenderGallery({ renders, projectName }: { renders: Render[]; pro
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            <span className="mr-3 font-mono text-xs text-muted-foreground" aria-live="polite">
+            <span
+              className="mr-3 font-mono text-xs text-muted-foreground"
+              aria-live={isPlaying ? 'off' : 'polite'}
+            >
               {String(index + 1).padStart(2, '0')} / {String(count).padStart(2, '0')}
             </span>
+            <button
+              type="button"
+              onClick={() => setIsPlaying((p) => !p)}
+              className="flex h-11 w-11 items-center justify-center border border-border text-foreground transition-colors hover:border-primary hover:text-primary"
+              aria-label={isPlaying ? 'Pause slideshow' : 'Play slideshow'}
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </button>
             <button
               type="button"
               onClick={() => go(index - 1)}
