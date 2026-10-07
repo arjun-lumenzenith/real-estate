@@ -5,7 +5,7 @@ import { ConversionEvent } from '@/components/thank-you/conversion-event'
 import { slugToTitle } from '@/lib/format-slug'
 
 const BASE_URL = 'https://www.lumenzenith.com'
-const SOBHA_ONEWORLD_CONVERSION = 'AW-7824191474/2WMYCPLf7pIdEMGEhPRE'
+const SOBHA_ONEWORLD_CONVERSION = 'AW-18496946753/2WMYCPLf7pIdEMGEhPRE'
 const SOBHA_ONEWORLD_SLUGS = new Set(['sobha-one-world', 'sobha-oneworld'])
 
 interface ThankYouPageProps {
