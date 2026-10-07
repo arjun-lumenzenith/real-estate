@@ -8,9 +8,15 @@ interface SiteVisitDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   projectName: string
+  successRedirect?: string
 }
 
-export function SiteVisitDialog({ open, onOpenChange, projectName }: SiteVisitDialogProps) {
+export function SiteVisitDialog({
+  open,
+  onOpenChange,
+  projectName,
+  successRedirect,
+}: SiteVisitDialogProps) {
   const [formKey, setFormKey] = useState(0)
 
   const handleOpenChange = (value: boolean) => {
@@ -32,6 +38,7 @@ export function SiteVisitDialog({ open, onOpenChange, projectName }: SiteVisitDi
             heading={`Book a Site Visit — ${projectName}`}
             subheading="Share your details and our advisor will confirm a visit slot, with exclusive launch pricing."
             submitLabel="Book My Site Visit"
+            successRedirect={successRedirect}
           />
         </div>
       </DialogContent>

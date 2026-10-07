@@ -69,7 +69,12 @@ export function ProjectLanding({ project }: { project: ProjectData }) {
         </div>
       )}
 
-      <SiteVisitDialog open={visitOpen} onOpenChange={setVisitOpen} projectName={project.name} />
+      <SiteVisitDialog
+        open={visitOpen}
+        onOpenChange={setVisitOpen}
+        projectName={project.name}
+        successRedirect="/thank-you/sobha-one-world"
+      />
     </>
   )
 }

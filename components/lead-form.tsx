@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Turnstile } from '@marsidev/react-turnstile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -58,6 +59,7 @@ interface LeadFormProps {
   heading?: string
   subheading?: string
   submitLabel?: string
+  successRedirect?: string
 }
 
 export function LeadForm({
@@ -65,7 +67,9 @@ export function LeadForm({
   heading = 'Get a Free Callback',
   subheading,
   submitLabel = 'Request a Free Callback',
+  successRedirect,
 }: LeadFormProps) {
+  const router = useRouter()
   const [submitted, setSubmitted] = useState(false)
   const [referenceId, setReferenceId] = useState("")
   const [loading, setLoading] = useState(false)
@@ -163,6 +167,11 @@ export function LeadForm({
         return
       }
       
+      if (successRedirect) {
+        router.push(successRedirect)
+        return
+      }
+
       setReferenceId(data.data.referenceId)
       setSubmitted(true)
       setLoading(false)

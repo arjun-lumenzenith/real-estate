@@ -102,7 +102,7 @@ export const viewport: Viewport = {
   themeColor: '#0d1525',
 }
 
-const GOOGLE_ADS_ID = 'AW-18496946753'
+const GOOGLE_ADS_ID = 'AW-7824191474'
 
 export default function RootLayout({
   children,
